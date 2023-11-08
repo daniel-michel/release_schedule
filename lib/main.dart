@@ -35,7 +35,14 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Release Schedule")),
+      appBar: AppBar(
+        title: const Text("Release Schedule"),
+        actions: [
+          FilledButton(
+              onPressed: () => manager.removeMoviesWhere((movie) => true),
+              child: const Icon(Icons.delete))
+        ],
+      ),
       body: MovieManagerList(manager),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.refresh),

@@ -73,13 +73,14 @@ class MovieManager extends ChangeNotifier {
       MovieData? existing =
           firstWhereOrNull(movies, (element) => movie.same(element));
       if (existing == null) {
-        movies.add(movie);
+        _insertMovie(movie);
         movie.addListener(() {
           _moviesModified(withoutAddingOrRemoving: true);
         });
         added = true;
         actualMovies.add(movie);
       } else {
+        existing.updateWithNew(movie);
         actualMovies.add(existing);
       }
     }
@@ -87,6 +88,21 @@ class MovieManager extends ChangeNotifier {
       _moviesModified();
     }
     return actualMovies;
+  }
+
+  _insertMovie(MovieData movie) {
+    int min = 0;
+    int max = movies.length - 1;
+    while (min - 1 < max) {
+      int center = ((min + max) / 2).floor();
+      int diff = movie.releaseDate.compareTo(movies[center].releaseDate);
+      if (diff < 0) {
+        max = center - 1;
+      } else {
+        min = center + 1;
+      }
+    }
+    movies.insert(min, movie);
   }
 
   removeMoviesWhere(bool Function(MovieData movie) test) {
