@@ -44,6 +44,8 @@ String durationApproximatedInWords(Duration duration) {
 String durationToRelativeTimeString(Duration duration) {
   if (duration.isNegative) {
     return "${durationApproximatedInWords(-duration)} ago";
+  } else if (duration == Duration.zero) {
+    return "now";
   } else {
     return "in ${durationApproximatedInWords(duration)}";
   }

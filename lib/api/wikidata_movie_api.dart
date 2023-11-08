@@ -10,9 +10,18 @@ class WikidataMovieData extends MovieData {
   WikidataMovieData(String title, DateTime releaseDate, this.entityId)
       : super(title, releaseDate);
 
+  WikidataMovieData.fromEncodable(Map encodable)
+      : entityId = encodable["entityId"],
+        super.fromJsonEncodable(encodable);
+
   @override
   bool same(MovieData other) {
     return other is WikidataMovieData && entityId == other.entityId;
+  }
+
+  @override
+  Map toJsonEncodable() {
+    return super.toJsonEncodable()..addAll({"entityId": entityId});
   }
 }
 
@@ -35,13 +44,13 @@ ORDER BY ?minReleaseDate
 LIMIT $limit""";
 }
 
-class WikidataMovieApi implements MovieApi<WikidataMovieData> {
+class WikidataMovieApi implements MovieApi {
   ApiManager searchApi = ApiManager("https://www.wikidata.org/w/api.php");
   ApiManager queryApi =
       ApiManager("https://query.wikidata.org/sparql?format=json");
 
   @override
-  Future<void> addMovieDetails(List<WikidataMovieData> movies) {
+  Future<void> addMovieDetails(List<MovieData> movies) {
     // TODO: implement addMovieDetails
     throw UnimplementedError();
   }

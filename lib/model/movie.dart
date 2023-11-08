@@ -7,19 +7,41 @@ class Review {
   int count;
 
   Review(this.score, this.by, this.asOf, this.count);
+  Review.fromJsonEncodable(Map json)
+      : score = json["score"],
+        by = json["by"],
+        asOf = DateTime.parse(json["asOf"]),
+        count = json["count"];
+
+  Map toJsonEncodable() {
+    return {
+      "score": score,
+      "by": by,
+      "asOf": asOf.toIso8601String(),
+      "count": count,
+    };
+  }
 }
 
 typedef ReleaseDateInCountry = (String country, DateTime date);
 typedef TitleInCountry = (String country, String title);
 
 class MovieData extends ChangeNotifier {
-  final String title;
-  final DateTime releaseDate;
+  String _title;
+  DateTime _releaseDate;
   bool _hasDetails = false;
-  List<ReleaseDateInCountry> _releaseDates = [];
-  List<String> _genres = [];
-  List<TitleInCountry> _titles = [];
-  List<Review> _reviews = [];
+  List<ReleaseDateInCountry>? _releaseDates;
+  List<String>? _genres;
+  List<TitleInCountry>? _titles;
+  List<Review>? _reviews;
+
+  String get title {
+    return _title;
+  }
+
+  DateTime get releaseDate {
+    return _releaseDate;
+  }
 
   List<ReleaseDateInCountry>? get releaseDates {
     return _releaseDates;
@@ -39,6 +61,14 @@ class MovieData extends ChangeNotifier {
 
   bool get hasDetails {
     return _hasDetails;
+  }
+
+  void updateWithNew(MovieData movie) {
+    setDetails(
+        releaseDates: movie.releaseDates,
+        genres: movie.genres,
+        titles: movie.titles,
+        reviews: movie.reviews);
   }
 
   void setDetails(
@@ -64,12 +94,49 @@ class MovieData extends ChangeNotifier {
 
   @override
   String toString() {
-    return "$title (${releaseDate.year}${_genres.isNotEmpty ? "; ${_genres.join(", ")}" : ""})";
+    return "$title (${releaseDate.year}${_genres?.isNotEmpty ?? true ? "; ${_genres?.join(", ")}" : ""})";
+  }
+
+  Map toJsonEncodable() {
+    List? releaseDatesByCountry =
+        _releaseDates?.map((e) => [e.$1, e.$2.toIso8601String()]).toList();
+    List? titlesByCountry = _titles?.map((e) => [e.$1, e.$2]).toList();
+    return {
+      "title": title,
+      "releaseDate": releaseDate.toIso8601String(),
+      "releaseDates": releaseDatesByCountry,
+      "genres": genres,
+      "titles": titlesByCountry,
+      "reviews": reviews,
+    };
   }
 
   bool same(MovieData other) {
     return title == other.title && releaseDate == other.releaseDate;
   }
 
-  MovieData(this.title, this.releaseDate);
+  MovieData(this._title, this._releaseDate);
+
+  MovieData.fromJsonEncodable(Map json)
+      : _title = json["title"],
+        _releaseDate = DateTime.parse(json["releaseDate"]) {
+    setDetails(
+        genres: json["genres"],
+        releaseDates: json["releaseDates"] != null
+            ? (json["releaseDates"] as List<List<dynamic>>)
+                .map((release) => ((release[0], DateTime.parse(release[1]))
+                    as ReleaseDateInCountry))
+                .toList()
+            : null,
+        reviews: json["reviews"] != null
+            ? (json["reviews"] as List<Map<String, dynamic>>)
+                .map((review) => Review.fromJsonEncodable(review))
+                .toList()
+            : null,
+        titles: json["titles"] != null
+            ? (json["titles"] as List<dynamic>)
+                .map((title) => (title[0], title[1]) as TitleInCountry)
+                .toList()
+            : null);
+  }
 }
