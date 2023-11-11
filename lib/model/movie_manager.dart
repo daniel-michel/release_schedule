@@ -53,11 +53,11 @@ class MovieManager extends ChangeNotifier {
     _loadCache();
   }
 
-  _loadCache() async {
+  Future<void> _loadCache() async {
     addMovies(await cache.retrieve());
   }
 
-  _moviesModified({bool withoutAddingOrRemoving = false}) {
+  void _moviesModified({bool withoutAddingOrRemoving = false}) {
     cacheUpdater?.call();
     if (!withoutAddingOrRemoving) {
       // only notify listeners if movies are added or removed
@@ -90,7 +90,7 @@ class MovieManager extends ChangeNotifier {
     return actualMovies;
   }
 
-  _insertMovie(MovieData movie) {
+  void _insertMovie(MovieData movie) {
     int min = 0;
     int max = movies.length - 1;
     while (min - 1 < max) {
@@ -105,7 +105,7 @@ class MovieManager extends ChangeNotifier {
     movies.insert(min, movie);
   }
 
-  removeMoviesWhere(bool Function(MovieData movie) test) {
+  void removeMoviesWhere(bool Function(MovieData movie) test) {
     bool removedMovies = false;
     for (int i = movies.length - 1; i >= 0; i--) {
       bool remove = test(movies[i]);
@@ -128,11 +128,11 @@ class MovieManager extends ChangeNotifier {
     return addMovies(movies);
   }
 
-  expandDetails(List<MovieData> movies) {
+  void expandDetails(List<MovieData> movies) {
     api.addMovieDetails(movies);
   }
 
-  loadUpcomingMovies() async {
+  Future<void> loadUpcomingMovies() async {
     try {
       loading = true;
       notifyListeners();
@@ -155,7 +155,7 @@ class LiveSearch<CustomMovieData extends MovieData> extends ChangeNotifier {
 
   LiveSearch(this.manager);
 
-  updateSearch(String search) {
+  void updateSearch(String search) {
     searchTerm = search;
   }
 }

@@ -39,6 +39,8 @@ class MovieData extends ChangeNotifier {
   List<TitleInCountry>? _titles;
   List<Review>? _reviews;
 
+  MovieData(this._title, this._releaseDate, this._releaseDatePrecision);
+
   String get title {
     return _title;
   }
@@ -138,8 +140,6 @@ class MovieData extends ChangeNotifier {
   bool same(MovieData other) {
     return title == other.title && releaseDate == other.releaseDate;
   }
-
-  MovieData(this._title, this._releaseDate, this._releaseDatePrecision);
 
   MovieData.fromJsonEncodable(Map json)
       : _title = json["title"],
