@@ -76,6 +76,7 @@ class MovieManager extends ChangeNotifier {
         _insertMovie(movie);
         movie.addListener(() {
           _moviesModified(withoutAddingOrRemoving: true);
+          _resortMovies();
         });
         added = true;
         actualMovies.add(movie);
@@ -103,6 +104,17 @@ class MovieManager extends ChangeNotifier {
       }
     }
     movies.insert(min, movie);
+  }
+
+  void _resortMovies() {
+    for (int i = 0; i < movies.length; i++) {
+      var temp = movies[i];
+      int j = i - 1;
+      for (; j >= 0 && movies[j].releaseDate.isAfter(temp.releaseDate); j--) {
+        movies[j + 1] = movies[j];
+      }
+      movies[j + 1] = temp;
+    }
   }
 
   void removeMoviesWhere(bool Function(MovieData movie) test) {
