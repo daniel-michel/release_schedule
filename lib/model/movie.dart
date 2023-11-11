@@ -26,9 +26,13 @@ class Review {
 typedef ReleaseDateInCountry = (String country, DateTime date);
 typedef TitleInCountry = (String country, String title);
 
+enum DatePrecision { decade, year, month, day, hour, minute }
+
 class MovieData extends ChangeNotifier {
   String _title;
   DateTime _releaseDate;
+  DatePrecision _releaseDatePrecision;
+
   bool _hasDetails = false;
   List<ReleaseDateInCountry>? _releaseDates;
   List<String>? _genres;
@@ -41,6 +45,10 @@ class MovieData extends ChangeNotifier {
 
   DateTime get releaseDate {
     return _releaseDate;
+  }
+
+  DatePrecision get releaseDatePrecision {
+    return _releaseDatePrecision;
   }
 
   List<ReleaseDateInCountry>? get releaseDates {
@@ -65,6 +73,9 @@ class MovieData extends ChangeNotifier {
 
   void updateWithNew(MovieData movie) {
     setDetails(
+        title: movie.title,
+        releaseDate: movie.releaseDate,
+        releaseDatePrecision: movie.releaseDatePrecision,
         releaseDates: movie.releaseDates,
         genres: movie.genres,
         titles: movie.titles,
@@ -72,10 +83,22 @@ class MovieData extends ChangeNotifier {
   }
 
   void setDetails(
-      {List<ReleaseDateInCountry>? releaseDates,
+      {String? title,
+      DateTime? releaseDate,
+      DatePrecision? releaseDatePrecision,
+      List<ReleaseDateInCountry>? releaseDates,
       List<String>? genres,
       List<TitleInCountry>? titles,
       List<Review>? reviews}) {
+    if (title != null) {
+      _title = title;
+    }
+    if (releaseDate != null) {
+      _releaseDate = releaseDate;
+    }
+    if (releaseDatePrecision != null) {
+      _releaseDatePrecision = releaseDatePrecision;
+    }
     if (releaseDates != null) {
       _releaseDates = releaseDates;
     }
@@ -104,6 +127,7 @@ class MovieData extends ChangeNotifier {
     return {
       "title": title,
       "releaseDate": releaseDate.toIso8601String(),
+      "releaseDatePrecision": _releaseDatePrecision.name,
       "releaseDates": releaseDatesByCountry,
       "genres": genres,
       "titles": titlesByCountry,
@@ -115,11 +139,13 @@ class MovieData extends ChangeNotifier {
     return title == other.title && releaseDate == other.releaseDate;
   }
 
-  MovieData(this._title, this._releaseDate);
+  MovieData(this._title, this._releaseDate, this._releaseDatePrecision);
 
   MovieData.fromJsonEncodable(Map json)
       : _title = json["title"],
-        _releaseDate = DateTime.parse(json["releaseDate"]) {
+        _releaseDate = DateTime.parse(json["releaseDate"]),
+        _releaseDatePrecision = DatePrecision.values.firstWhere(
+            (element) => element.name == json["releaseDatePrecision"]) {
     setDetails(
         genres: json["genres"],
         releaseDates: json["releaseDates"] != null

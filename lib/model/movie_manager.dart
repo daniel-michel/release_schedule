@@ -136,7 +136,8 @@ class MovieManager extends ChangeNotifier {
     try {
       loading = true;
       notifyListeners();
-      List<MovieData> movies = await api.getUpcomingMovies();
+      List<MovieData> movies = await api
+          .getUpcomingMovies(DateTime.now().subtract(const Duration(days: 7)));
       addMovies(movies);
     } finally {
       loading = false;
