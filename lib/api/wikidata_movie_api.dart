@@ -164,21 +164,13 @@ String _createUpcomingMovieQuery(DateTime startDate, int limit) {
   return """
 SELECT
   ?movie
-  ?movieLabel
   (MIN(?releaseDate) as ?minReleaseDate)
-  (SAMPLE(?precision) as ?datePrecision)
 WHERE {
   ?movie wdt:P31 wd:Q11424;         # Q11424 is the item for "film"
-         wdt:P577 ?releaseDate;      # P577 is the "publication date" property
-         wdt:P1476 ?title.
-  OPTIONAL {
-    ?movie p:P577/psv:P577/wikibase:timePrecision ?precision.
-  }
+         wdt:P577 ?releaseDate.      # P577 is the "publication date" property
   FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime))
-
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?movie ?movieLabel
+GROUP BY ?movie
 ORDER BY ?minReleaseDate
 LIMIT $limit""";
 }
