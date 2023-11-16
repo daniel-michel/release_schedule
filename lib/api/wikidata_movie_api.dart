@@ -27,11 +27,12 @@ class WikidataProperties {
   static const String placeOfPublication = "P291";
 }
 
-ApiManager _wikidataApi = ApiManager("https://www.wikidata.org/w/api.php");
+ApiManager _wikidataApi =
+    ApiManager("https://www.wikidata.org/w/api.php?origin=*");
 
 class WikidataMovieApi implements MovieApi {
   ApiManager queryApi =
-      ApiManager("https://query.wikidata.org/sparql?format=json");
+      ApiManager("https://query.wikidata.org/sparql?format=json&origin=*");
 
   @override
   Future<void> addMovieDetails(List<MovieData> movies) {
@@ -66,7 +67,7 @@ class WikidataMovieApi implements MovieApi {
       final start = i * batchSize;
       final end = min((i + 1) * batchSize, movieIds.length);
       var response = await _wikidataApi.get(
-          "?action=wbgetentities&format=json&props=labels|claims&ids=${movieIds.sublist(start, end).join("|")}");
+          "&action=wbgetentities&format=json&props=labels|claims&ids=${movieIds.sublist(start, end).join("|")}");
       Map<String, dynamic> result = jsonDecode(response.body);
       Map<String, dynamic> batchEntities = result["entities"];
       entities.addAll(batchEntities);
@@ -210,7 +211,7 @@ Future<Map<String, String>> _getLabelsForEntities(
     final start = i * batchSize;
     final end = min((i + 1) * batchSize, entityIds.length);
     Response response = await _wikidataApi.get(
-        "?action=wbgetentities&format=json&props=labels&ids=${entityIds.sublist(start, end).join("|")}");
+        "&action=wbgetentities&format=json&props=labels&ids=${entityIds.sublist(start, end).join("|")}");
     Map<String, dynamic> result = jsonDecode(response.body);
     Map<String, dynamic> batchEntities = result["entities"];
     for (String entityId in batchEntities.keys) {
