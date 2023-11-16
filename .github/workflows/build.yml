@@ -23,7 +23,7 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: linux-build
-          path: build/x64/release/bundle
+          path: build/linux/x64/release/bundle
 
   build-android:
     name: Build for Android
