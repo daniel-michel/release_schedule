@@ -23,17 +23,13 @@ First the SPARQL API is used to retrieve upcoming movies using the endpoint "htt
 ```sql
 SELECT
   ?movie
-  ?movieLabel
   (MIN(?releaseDate) as ?minReleaseDate)
 WHERE {
   ?movie wdt:P31 wd:Q11424;         # Q11424 is the item for "film"
-         wdt:P577 ?releaseDate;      # P577 is the "publication date" property
-         wdt:P1476 ?title.
+         wdt:P577 ?releaseDate.      # P577 is the "publication date" property
   FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime))
-
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?movie ?movieLabel
+GROUP BY ?movie
 ORDER BY ?minReleaseDate
 LIMIT $limit
 ```
