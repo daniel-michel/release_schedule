@@ -3,36 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:release_schedule/api/movie_api.dart';
 import 'package:release_schedule/api/wikidata_movie_api.dart';
+import 'package:release_schedule/model/delayed_function_caller.dart';
 import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie.dart';
-
-T? firstWhereOrNull<T>(List<T> list, bool Function(T element) test) {
-  try {
-    return list.firstWhere(test);
-  } catch (e) {
-    return null;
-  }
-}
-
-class DelayedFunctionCaller {
-  final Function function;
-  final Duration duration;
-  Timer? _timer;
-
-  DelayedFunctionCaller(this.function, this.duration);
-
-  void call() {
-    // If a timer is already active, return.
-    if (_timer != null && _timer!.isActive) {
-      return;
-    }
-
-    // Create a timer that calls the function after the specified duration.
-    _timer = Timer(duration, () {
-      function();
-    });
-  }
-}
 
 final movieManager = MovieManager(WikidataMovieApi(),
     LocalMovieStorageGetStorage(WikidataMovieData.fromEncodable));
@@ -161,16 +134,10 @@ class MovieManager extends ChangeNotifier {
   }
 }
 
-class LiveSearch<CustomMovieData extends MovieData> extends ChangeNotifier {
-  String searchTerm = "";
-  List<CustomMovieData> searchResults = [];
-  Duration minTimeBetweenRequests = const Duration(milliseconds: 500);
-  Duration minTimeAfterChangeToRequest = const Duration(milliseconds: 200);
-  final MovieManager manager;
-
-  LiveSearch(this.manager);
-
-  void updateSearch(String search) {
-    searchTerm = search;
+T? firstWhereOrNull<T>(List<T> list, bool Function(T element) test) {
+  try {
+    return list.firstWhere(test);
+  } catch (e) {
+    return null;
   }
 }

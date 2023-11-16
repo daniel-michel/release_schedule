@@ -1,63 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class Review {
-  String score;
-  String by;
-  DateTime asOf;
-  int count;
-
-  Review(this.score, this.by, this.asOf, this.count);
-  Review.fromJsonEncodable(Map json)
-      : score = json["score"],
-        by = json["by"],
-        asOf = DateTime.parse(json["asOf"]),
-        count = json["count"];
-
-  Map toJsonEncodable() {
-    return {
-      "score": score,
-      "by": by,
-      "asOf": asOf.toIso8601String(),
-      "count": count,
-    };
-  }
-}
-
-typedef TitleInLanguage = ({String title, String language});
-
-class DateWithPrecisionAndCountry {
-  DateTime date;
-  DatePrecision precision;
-  String country;
-
-  DateWithPrecisionAndCountry(this.date, this.precision, this.country);
-
-  DateWithPrecisionAndCountry.fromJsonEncodable(List<dynamic> json)
-      : date = DateTime.parse(json[0]),
-        precision = DatePrecision.values
-            .firstWhere((element) => element.name == json[1]),
-        country = json[2];
-
-  toJsonEncodable() {
-    return [date.toIso8601String(), precision.name, country];
-  }
-
-  @override
-  String toString() {
-    String dateString = switch (precision) {
-      DatePrecision.decade || DatePrecision.year => date.year.toString(),
-      DatePrecision.month => DateFormat("MMMM yyyy").format(date),
-      DatePrecision.day => DateFormat("MMMM d, yyyy").format(date),
-      DatePrecision.hour => DateFormat("MMMM d, yyyy, HH").format(date),
-      DatePrecision.minute => DateFormat("MMMM d, yyyy, HH:mm").format(date)
-    };
-    return "$dateString ($country)";
-  }
-}
-
-enum DatePrecision { decade, year, month, day, hour, minute }
-
 class MovieData extends ChangeNotifier {
   String _title;
   DateWithPrecisionAndCountry _releaseDate;
@@ -185,5 +128,62 @@ class MovieData extends ChangeNotifier {
                     (title: title[0], language: title[1]) as TitleInLanguage)
                 .toList()
             : null);
+  }
+}
+
+enum DatePrecision { decade, year, month, day, hour, minute }
+
+typedef TitleInLanguage = ({String title, String language});
+
+class DateWithPrecisionAndCountry {
+  DateTime date;
+  DatePrecision precision;
+  String country;
+
+  DateWithPrecisionAndCountry(this.date, this.precision, this.country);
+
+  DateWithPrecisionAndCountry.fromJsonEncodable(List<dynamic> json)
+      : date = DateTime.parse(json[0]),
+        precision = DatePrecision.values
+            .firstWhere((element) => element.name == json[1]),
+        country = json[2];
+
+  toJsonEncodable() {
+    return [date.toIso8601String(), precision.name, country];
+  }
+
+  @override
+  String toString() {
+    String dateString = switch (precision) {
+      DatePrecision.decade || DatePrecision.year => date.year.toString(),
+      DatePrecision.month => DateFormat("MMMM yyyy").format(date),
+      DatePrecision.day => DateFormat("MMMM d, yyyy").format(date),
+      DatePrecision.hour => DateFormat("MMMM d, yyyy, HH").format(date),
+      DatePrecision.minute => DateFormat("MMMM d, yyyy, HH:mm").format(date)
+    };
+    return "$dateString ($country)";
+  }
+}
+
+class Review {
+  String score;
+  String by;
+  DateTime asOf;
+  int count;
+
+  Review(this.score, this.by, this.asOf, this.count);
+  Review.fromJsonEncodable(Map json)
+      : score = json["score"],
+        by = json["by"],
+        asOf = DateTime.parse(json["asOf"]),
+        count = json["count"];
+
+  Map toJsonEncodable() {
+    return {
+      "score": score,
+      "by": by,
+      "asOf": asOf.toIso8601String(),
+      "count": count,
+    };
   }
 }

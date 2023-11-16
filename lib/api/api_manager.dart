@@ -2,11 +2,6 @@ import 'dart:async';
 
 import 'package:http/http.dart' as http;
 
-class RateLimitStatus {
-  int consecutiveCount = 0;
-  Duration timeout = const Duration(seconds: 1);
-}
-
 class ApiManager {
   String baseUrl;
   Future<void> ongoingRequest = Future.value();
@@ -58,4 +53,9 @@ class ApiManager {
       completer.complete();
     }
   }
+}
+
+class RateLimitStatus {
+  int consecutiveCount = 0;
+  Duration timeout = const Duration(seconds: 1);
 }
