@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class Review {
   String score;
@@ -23,37 +24,61 @@ class Review {
   }
 }
 
-typedef ReleaseDateInCountry = (String country, DateTime date);
-typedef TitleInCountry = (String country, String title);
+typedef TitleInLanguage = ({String title, String language});
+
+class DateWithPrecisionAndCountry {
+  DateTime date;
+  DatePrecision precision;
+  String country;
+
+  DateWithPrecisionAndCountry(this.date, this.precision, this.country);
+
+  DateWithPrecisionAndCountry.fromJsonEncodable(List<dynamic> json)
+      : date = DateTime.parse(json[0]),
+        precision = DatePrecision.values
+            .firstWhere((element) => element.name == json[1]),
+        country = json[2];
+
+  toJsonEncodable() {
+    return [date.toIso8601String(), precision.name, country];
+  }
+
+  @override
+  String toString() {
+    String dateString = switch (precision) {
+      DatePrecision.decade || DatePrecision.year => date.year.toString(),
+      DatePrecision.month => DateFormat("MMMM yyyy").format(date),
+      DatePrecision.day => DateFormat("MMMM d, yyyy").format(date),
+      DatePrecision.hour => DateFormat("MMMM d, yyyy, HH").format(date),
+      DatePrecision.minute => DateFormat("MMMM d, yyyy, HH:mm").format(date)
+    };
+    return "$dateString ($country)";
+  }
+}
 
 enum DatePrecision { decade, year, month, day, hour, minute }
 
 class MovieData extends ChangeNotifier {
   String _title;
-  DateTime _releaseDate;
-  DatePrecision _releaseDatePrecision;
+  DateWithPrecisionAndCountry _releaseDate;
 
   bool _hasDetails = false;
-  List<ReleaseDateInCountry>? _releaseDates;
+  List<DateWithPrecisionAndCountry>? _releaseDates;
   List<String>? _genres;
-  List<TitleInCountry>? _titles;
+  List<TitleInLanguage>? _titles;
   List<Review>? _reviews;
 
-  MovieData(this._title, this._releaseDate, this._releaseDatePrecision);
+  MovieData(this._title, this._releaseDate);
 
   String get title {
     return _title;
   }
 
-  DateTime get releaseDate {
+  DateWithPrecisionAndCountry get releaseDate {
     return _releaseDate;
   }
 
-  DatePrecision get releaseDatePrecision {
-    return _releaseDatePrecision;
-  }
-
-  List<ReleaseDateInCountry>? get releaseDates {
+  List<DateWithPrecisionAndCountry>? get releaseDates {
     return _releaseDates;
   }
 
@@ -61,7 +86,7 @@ class MovieData extends ChangeNotifier {
     return _genres;
   }
 
-  List<TitleInCountry>? get titles {
+  List<TitleInLanguage>? get titles {
     return _titles;
   }
 
@@ -77,7 +102,6 @@ class MovieData extends ChangeNotifier {
     setDetails(
         title: movie.title,
         releaseDate: movie.releaseDate,
-        releaseDatePrecision: movie.releaseDatePrecision,
         releaseDates: movie.releaseDates,
         genres: movie.genres,
         titles: movie.titles,
@@ -86,20 +110,16 @@ class MovieData extends ChangeNotifier {
 
   void setDetails(
       {String? title,
-      DateTime? releaseDate,
-      DatePrecision? releaseDatePrecision,
-      List<ReleaseDateInCountry>? releaseDates,
+      DateWithPrecisionAndCountry? releaseDate,
+      List<DateWithPrecisionAndCountry>? releaseDates,
       List<String>? genres,
-      List<TitleInCountry>? titles,
+      List<TitleInLanguage>? titles,
       List<Review>? reviews}) {
     if (title != null) {
       _title = title;
     }
     if (releaseDate != null) {
       _releaseDate = releaseDate;
-    }
-    if (releaseDatePrecision != null) {
-      _releaseDatePrecision = releaseDatePrecision;
     }
     if (releaseDates != null) {
       _releaseDates = releaseDates;
@@ -119,17 +139,16 @@ class MovieData extends ChangeNotifier {
 
   @override
   String toString() {
-    return "$title (${releaseDate.year}${_genres?.isNotEmpty ?? true ? "; ${_genres?.join(", ")}" : ""})";
+    return "$title (${_releaseDate.toString()}${_genres?.isNotEmpty ?? true ? "; ${_genres?.join(", ")}" : ""})";
   }
 
   Map toJsonEncodable() {
     List? releaseDatesByCountry =
-        _releaseDates?.map((e) => [e.$1, e.$2.toIso8601String()]).toList();
-    List? titlesByCountry = _titles?.map((e) => [e.$1, e.$2]).toList();
+        _releaseDates?.map((e) => e.toJsonEncodable()).toList();
+    List? titlesByCountry = _titles?.map((e) => [e.title, e.language]).toList();
     return {
       "title": title,
-      "releaseDate": releaseDate.toIso8601String(),
-      "releaseDatePrecision": _releaseDatePrecision.name,
+      "releaseDate": _releaseDate.toJsonEncodable(),
       "releaseDates": releaseDatesByCountry,
       "genres": genres,
       "titles": titlesByCountry,
@@ -143,15 +162,16 @@ class MovieData extends ChangeNotifier {
 
   MovieData.fromJsonEncodable(Map json)
       : _title = json["title"],
-        _releaseDate = DateTime.parse(json["releaseDate"]),
-        _releaseDatePrecision = DatePrecision.values.firstWhere(
-            (element) => element.name == json["releaseDatePrecision"]) {
+        _releaseDate =
+            DateWithPrecisionAndCountry.fromJsonEncodable(json["releaseDate"]) {
     setDetails(
-        genres: json["genres"],
+        genres: (json["genres"] as List<dynamic>?)
+            ?.map((genre) => genre as String)
+            .toList(),
         releaseDates: json["releaseDates"] != null
             ? (json["releaseDates"] as List<List<dynamic>>)
-                .map((release) => ((release[0], DateTime.parse(release[1]))
-                    as ReleaseDateInCountry))
+                .map((release) =>
+                    DateWithPrecisionAndCountry.fromJsonEncodable(release))
                 .toList()
             : null,
         reviews: json["reviews"] != null
@@ -161,7 +181,8 @@ class MovieData extends ChangeNotifier {
             : null,
         titles: json["titles"] != null
             ? (json["titles"] as List<dynamic>)
-                .map((title) => (title[0], title[1]) as TitleInCountry)
+                .map((title) =>
+                    (title: title[0], language: title[1]) as TitleInLanguage)
                 .toList()
             : null);
   }

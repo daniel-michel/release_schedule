@@ -96,7 +96,8 @@ class MovieManager extends ChangeNotifier {
     int max = movies.length - 1;
     while (min - 1 < max) {
       int center = ((min + max) / 2).floor();
-      int diff = movie.releaseDate.compareTo(movies[center].releaseDate);
+      int diff =
+          movie.releaseDate.date.compareTo(movies[center].releaseDate.date);
       if (diff < 0) {
         max = center - 1;
       } else {
@@ -110,7 +111,9 @@ class MovieManager extends ChangeNotifier {
     for (int i = 0; i < movies.length; i++) {
       var temp = movies[i];
       int j = i - 1;
-      for (; j >= 0 && movies[j].releaseDate.isAfter(temp.releaseDate); j--) {
+      for (;
+          j >= 0 && movies[j].releaseDate.date.isAfter(temp.releaseDate.date);
+          j--) {
         movies[j + 1] = movies[j];
       }
       movies[j + 1] = temp;
