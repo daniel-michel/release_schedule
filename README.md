@@ -4,7 +4,7 @@ A small app using the Wikidata API to show upcoming movies.
 
 You can try out the live web version at [daniel-michel.github.io/release_schedule](https://daniel-michel.github.io/release_schedule).
 
-Android and Linux builds can be found in the latest build run: [](https://github.com/daniel-michel/release_schedule/actions/workflows/build.yml) 
+Android and Linux builds can be found in the latest [build run](https://github.com/daniel-michel/release_schedule/actions/workflows/build.yml).
 
 Currently, only a simple list of upcoming movies is shown:
 ![](screenshots/movie_list.png)
