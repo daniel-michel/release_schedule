@@ -95,12 +95,12 @@ class MovieData extends ChangeNotifier {
       "releaseDates": releaseDatesByCountry,
       "genres": genres,
       "titles": titlesByCountry,
-      "reviews": reviews,
+      "reviews": reviews?.map((review) => review.toJsonEncodable()).toList(),
     };
   }
 
   bool same(MovieData other) {
-    return title == other.title && releaseDate == other.releaseDate;
+    return title == other.title && releaseDate.date == other.releaseDate.date;
   }
 
   MovieData.fromJsonEncodable(Map json)
@@ -112,13 +112,13 @@ class MovieData extends ChangeNotifier {
             ?.map((genre) => genre as String)
             .toList(),
         releaseDates: json["releaseDates"] != null
-            ? (json["releaseDates"] as List<List<dynamic>>)
+            ? (json["releaseDates"] as List<dynamic>)
                 .map((release) =>
                     DateWithPrecisionAndCountry.fromJsonEncodable(release))
                 .toList()
             : null,
         reviews: json["reviews"] != null
-            ? (json["reviews"] as List<Map<String, dynamic>>)
+            ? (json["reviews"] as List<dynamic>)
                 .map((review) => Review.fromJsonEncodable(review))
                 .toList()
             : null,
@@ -155,7 +155,9 @@ class DateWithPrecisionAndCountry {
   @override
   String toString() {
     String dateString = switch (precision) {
-      DatePrecision.decade || DatePrecision.year => date.year.toString(),
+      DatePrecision.decade =>
+        "${DateFormat("yyyy").format(date).substring(0, 3)}0s",
+      DatePrecision.year => date.year.toString(),
       DatePrecision.month => DateFormat("MMMM yyyy").format(date),
       DatePrecision.day => DateFormat("MMMM d, yyyy").format(date),
       DatePrecision.hour => DateFormat("MMMM d, yyyy, HH").format(date),

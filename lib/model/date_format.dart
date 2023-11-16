@@ -14,7 +14,8 @@ String _durationToRelativeDateString(Duration duration) {
     return "Yesterday";
   }
   if (duration.isNegative) {
-    return "${_durationApproximatedInWords(-duration)} ago";
+    String result = _durationApproximatedInWords(-duration);
+    return "${result[0].toUpperCase()}${result.substring(1)} ago";
   } else if (duration == Duration.zero) {
     return "Today";
   } else {
