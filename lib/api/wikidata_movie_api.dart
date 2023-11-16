@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:release_schedule/api/api_manager.dart';
+import 'package:release_schedule/api/json_helper.dart';
 import 'package:release_schedule/api/movie_api.dart';
 import 'package:release_schedule/model/movie.dart';
 
@@ -26,162 +27,7 @@ class WikidataProperties {
   static const String placeOfPublication = "P291";
 }
 
-/// Select values in nested List and Map structures using a path that may contain wildcards.
-/// The maps must always use String keys.
-/// The path is a dot-separated list of keys and indices.
-/// The wildcard "*" can be used to select all elements of a list or map.
-/// The wildcard "**" can be used to select all elements of a list or map and all elements of nested lists and maps.
-Iterable<({T value, String path})> _selectInJsonWithPath<T>(
-    dynamic json, String path) sync* {
-  if (path.isEmpty) {
-    if (json is T) {
-      yield (value: json, path: "");
-    }
-    return;
-  }
-  List<String> pathParts = path.split(".");
-  String first = pathParts.removeAt(0);
-  String rest = pathParts.join(".");
-  addFirstToPath(({T value, String path}) element) => (
-        value: element.value,
-        path: element.path.isEmpty ? first : "$first.${element.path}"
-      );
-
-  if (first == "*" || first == "**") {
-    String continueWithPath = first == "*" ? rest : path;
-    if (json is List) {
-      yield* json
-          .expand((e) => _selectInJsonWithPath<T>(e, continueWithPath))
-          .map(addFirstToPath);
-    } else if (json is Map) {
-      for (String key in json.keys) {
-        yield* _selectInJsonWithPath<T>(json[key], continueWithPath)
-            .map(addFirstToPath);
-      }
-    }
-  } else if (json is List) {
-    try {
-      int index = int.parse(first);
-      yield* _selectInJsonWithPath<T>(json[index], rest);
-    } catch (e) {
-      // The first part of the path is not an index or out of bounds -> ignore
-    }
-  } else if (json is Map) {
-    dynamic value = json[first];
-    if (value != null) {
-      yield* _selectInJsonWithPath<T>(value, pathParts.join("."));
-    }
-  }
-}
-
-Iterable<T> _selectInJson<T>(dynamic json, String path) {
-  return _selectInJsonWithPath<T>(json, path).map((e) => e.value);
-}
-
-Map<String, Iterable<dynamic>> _selectMultipleInJson(
-    dynamic json, Map<String, String> selector) {
-  Map<String, Iterable<dynamic>> result = {};
-  for (String key in selector.keys) {
-    result[key] = _selectInJsonWithPath(json, selector[key]!);
-  }
-  return result;
-}
-
 ApiManager _wikidataApi = ApiManager("https://www.wikidata.org/w/api.php");
-Map<String, String> _labelCache = {};
-Future<Map<String, String>> _getLabelsForEntities(
-    List<String> entityIds) async {
-  const batchSize = 50;
-  Map<String, String> labels = {};
-  for (int i = entityIds.length - 1; i >= 0; i--) {
-    if (_labelCache.containsKey(entityIds[i])) {
-      labels[entityIds[i]] = _labelCache[entityIds[i]]!;
-      entityIds.removeAt(i);
-    }
-  }
-  for (int i = 0; i < (entityIds.length / batchSize).ceil(); i++) {
-    final start = i * batchSize;
-    final end = min((i + 1) * batchSize, entityIds.length);
-    Response response = await _wikidataApi.get(
-        "?action=wbgetentities&format=json&props=labels&ids=${entityIds.sublist(start, end).join("|")}");
-    Map<String, dynamic> result = jsonDecode(response.body);
-    Map<String, dynamic> batchEntities = result["entities"];
-    for (String entityId in batchEntities.keys) {
-      Map<String, dynamic> labels = batchEntities[entityId]["labels"];
-      String label = labels.containsKey("en")
-          ? labels["en"]["value"]
-          : labels[labels.keys.first]["value"];
-      labels[entityId] = label;
-      _labelCache[entityId] = label;
-    }
-  }
-  return labels;
-}
-
-String _getCachedLabelForEntity(String entityId) {
-  return _labelCache[entityId] ?? entityId;
-}
-
-class WikidataMovieData extends MovieData {
-  String entityId;
-  WikidataMovieData(
-      String title, DateWithPrecisionAndCountry releaseDate, this.entityId)
-      : super(title, releaseDate);
-
-  WikidataMovieData.fromEncodable(Map encodable)
-      : entityId = encodable["entityId"],
-        super.fromJsonEncodable(encodable);
-
-  @override
-  bool same(MovieData other) {
-    return other is WikidataMovieData && entityId == other.entityId;
-  }
-
-  @override
-  Map toJsonEncodable() {
-    return super.toJsonEncodable()..addAll({"entityId": entityId});
-  }
-
-  static WikidataMovieData fromWikidataEntity(
-      String entityId, Map<String, dynamic> entity) {
-    String title =
-        _selectInJson<String>(entity, "labels.en.value").firstOrNull ??
-            _selectInJson<String>(entity, "labels.*.value").first;
-    Map<String, dynamic> claims = entity["claims"];
-    List<TitleInLanguage>? titles = _selectInJson(
-            claims, "${WikidataProperties.title}.*.mainsnak.datavalue.value")
-        .map((value) => (
-              title: value["text"],
-              language: value["language"],
-            ) as TitleInLanguage)
-        .toList();
-    List<DateWithPrecisionAndCountry> releaseDates =
-        _selectInJson(claims, "${WikidataProperties.publicationDate}.*")
-            .map<DateWithPrecisionAndCountry>((dateClaim) {
-      var value = _selectInJson(dateClaim, "mainsnak.datavalue.value").first;
-      String country = _getCachedLabelForEntity(_selectInJson<String>(dateClaim,
-                  "qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id")
-              .firstOrNull ??
-          "no country");
-      return DateWithPrecisionAndCountry(DateTime.parse(value["time"]),
-          _precisionFromWikidata(value["precision"]), country);
-    }).toList();
-    // Sort release dates with higher precision to the beginning
-    releaseDates
-        .sort((a, b) => -a.precision.index.compareTo(b.precision.index));
-    List<String>? genres = _selectInJson<String>(
-            claims, "${WikidataProperties.genre}.*.mainsnak.datavalue.value.id")
-        .map(_getCachedLabelForEntity)
-        .toList();
-    WikidataMovieData movie =
-        WikidataMovieData(title, releaseDates[0], entityId);
-    movie.setDetails(
-      titles: titles,
-      genres: genres,
-    );
-    return movie;
-  }
-}
 
 class WikidataMovieApi implements MovieApi {
   ApiManager queryApi =
@@ -228,10 +74,10 @@ class WikidataMovieApi implements MovieApi {
 
     List<String> allCountryAndGenreIds = [];
     // Add the country ids from the publication dates
-    allCountryAndGenreIds.addAll(_selectInJson<String>(entities,
+    allCountryAndGenreIds.addAll(selectInJson<String>(entities,
         "*.claims.${WikidataProperties.publicationDate}.*.qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id"));
     // Add the genre ids
-    allCountryAndGenreIds.addAll(_selectInJson<String>(entities,
+    allCountryAndGenreIds.addAll(selectInJson<String>(entities,
         "*.claims.${WikidataProperties.genre}.*.mainsnak.datavalue.value.id"));
     allCountryAndGenreIds = allCountryAndGenreIds.toSet().toList();
     // Prefetch all labels for countries and genres
@@ -248,6 +94,67 @@ class WikidataMovieApi implements MovieApi {
   Future<List<WikidataMovieData>> searchForMovies(String searchTerm) {
     // TODO: implement searchForMovies
     throw UnimplementedError();
+  }
+}
+
+class WikidataMovieData extends MovieData {
+  String entityId;
+  WikidataMovieData(
+      String title, DateWithPrecisionAndCountry releaseDate, this.entityId)
+      : super(title, releaseDate);
+
+  WikidataMovieData.fromEncodable(Map encodable)
+      : entityId = encodable["entityId"],
+        super.fromJsonEncodable(encodable);
+
+  @override
+  bool same(MovieData other) {
+    return other is WikidataMovieData && entityId == other.entityId;
+  }
+
+  @override
+  Map toJsonEncodable() {
+    return super.toJsonEncodable()..addAll({"entityId": entityId});
+  }
+
+  static WikidataMovieData fromWikidataEntity(
+      String entityId, Map<String, dynamic> entity) {
+    String title =
+        selectInJson<String>(entity, "labels.en.value").firstOrNull ??
+            selectInJson<String>(entity, "labels.*.value").first;
+    Map<String, dynamic> claims = entity["claims"];
+    List<TitleInLanguage>? titles = selectInJson(
+            claims, "${WikidataProperties.title}.*.mainsnak.datavalue.value")
+        .map((value) => (
+              title: value["text"],
+              language: value["language"],
+            ) as TitleInLanguage)
+        .toList();
+    List<DateWithPrecisionAndCountry> releaseDates =
+        selectInJson(claims, "${WikidataProperties.publicationDate}.*")
+            .map<DateWithPrecisionAndCountry>((dateClaim) {
+      var value = selectInJson(dateClaim, "mainsnak.datavalue.value").first;
+      String country = _getCachedLabelForEntity(selectInJson<String>(dateClaim,
+                  "qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id")
+              .firstOrNull ??
+          "no country");
+      return DateWithPrecisionAndCountry(DateTime.parse(value["time"]),
+          _precisionFromWikidata(value["precision"]), country);
+    }).toList();
+    // Sort release dates with higher precision to the beginning
+    releaseDates
+        .sort((a, b) => -a.precision.index.compareTo(b.precision.index));
+    List<String>? genres = selectInJson<String>(
+            claims, "${WikidataProperties.genre}.*.mainsnak.datavalue.value.id")
+        .map(_getCachedLabelForEntity)
+        .toList();
+    WikidataMovieData movie =
+        WikidataMovieData(title, releaseDates[0], entityId);
+    movie.setDetails(
+      titles: titles,
+      genres: genres,
+    );
+    return movie;
   }
 }
 
@@ -286,4 +193,38 @@ DatePrecision _precisionFromWikidata(int precision) {
     < 8 => throw Exception("The precision was too low, value: $precision"),
     _ => throw Exception("Unexpected precision value: $precision"),
   };
+}
+
+Map<String, String> _labelCache = {};
+Future<Map<String, String>> _getLabelsForEntities(
+    List<String> entityIds) async {
+  const batchSize = 50;
+  Map<String, String> labels = {};
+  for (int i = entityIds.length - 1; i >= 0; i--) {
+    if (_labelCache.containsKey(entityIds[i])) {
+      labels[entityIds[i]] = _labelCache[entityIds[i]]!;
+      entityIds.removeAt(i);
+    }
+  }
+  for (int i = 0; i < (entityIds.length / batchSize).ceil(); i++) {
+    final start = i * batchSize;
+    final end = min((i + 1) * batchSize, entityIds.length);
+    Response response = await _wikidataApi.get(
+        "?action=wbgetentities&format=json&props=labels&ids=${entityIds.sublist(start, end).join("|")}");
+    Map<String, dynamic> result = jsonDecode(response.body);
+    Map<String, dynamic> batchEntities = result["entities"];
+    for (String entityId in batchEntities.keys) {
+      Map<String, dynamic> labels = batchEntities[entityId]["labels"];
+      String label = labels.containsKey("en")
+          ? labels["en"]["value"]
+          : labels[labels.keys.first]["value"];
+      labels[entityId] = label;
+      _labelCache[entityId] = label;
+    }
+  }
+  return labels;
+}
+
+String _getCachedLabelForEntity(String entityId) {
+  return _labelCache[entityId] ?? entityId;
 }
