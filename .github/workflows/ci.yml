@@ -84,7 +84,7 @@ jobs:
       - run: flutter pub get
       - run: flutter build web --base-href "/release_schedule/"
       - name: Archive Web Artifact
-        uses: actions/upload-artifact@master
+        uses: actions/upload-pages-artifact@v2
         with:
           name: web-build
           path: build/web
