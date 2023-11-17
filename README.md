@@ -4,7 +4,7 @@ A small app using the Wikidata API to show upcoming movies.
 
 You can try out the live web version at [daniel-michel.github.io/release_schedule](https://daniel-michel.github.io/release_schedule).
 
-Android and Linux builds can be found in the latest [build run](https://github.com/daniel-michel/release_schedule/actions/workflows/build.yml).
+Android, Linux and Web builds can be found in the latest [CI run](https://github.com/daniel-michel/release_schedule/actions/workflows/ci.yml).
 
 Currently, only a simple list of upcoming movies is shown:
 
@@ -35,6 +35,6 @@ LIMIT $limit
 ```
 Where `$limit` is the maximum number of movies that are retrieved and `$date` the starting date from which movies are retrieved.
 `$limit` is currently set to 100 and `$date` one week before the current one.
-However, because there are multiple publication dates for most movies, the retrieved movies just need to have one publication date that is on or after `$date` for the movie to be included in the result. The `minReleaseDate` is not necessarily the release date displayed in the App, therefore some movies in the App might show up as having been released a long time ago.
+However, because there are multiple publication dates for most movies, the retrieved movies just need to have one publication date that is on or after `$date` for the movie to be included in the result. The `minReleaseDate` is not necessarily the release date displayed in the app, therefore some movies in the app might show up as having been released a long time ago.
 
 To get additional information about the movies and all release dates (in case some are before `$date` and some after) the API endpoint "https://www.wikidata.org/w/api.php?action=wbgetentities" is used.
