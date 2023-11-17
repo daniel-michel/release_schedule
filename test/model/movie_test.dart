@@ -4,19 +4,24 @@ import 'package:release_schedule/model/movie.dart';
 void main() {
   group('MovieData', () {
     test('updateWithNew() updates all fields', () {
-      final movie1 = MovieData('Title 1',
-          DateWithPrecisionAndCountry(DateTime.now(), DatePrecision.day, 'US'));
-      final movie2 = MovieData('Title 2',
-          DateWithPrecisionAndCountry(DateTime.now(), DatePrecision.day, 'UK'));
+      final movie1 = MovieData(
+          'Title 1',
+          DateWithPrecisionAndCountry(
+              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
+      final movie2 = MovieData(
+          'Title 2',
+          DateWithPrecisionAndCountry(
+              DateTime(2023, 1, 1), DatePrecision.day, 'UK'));
       movie2.setDetails(releaseDates: [
-        DateWithPrecisionAndCountry(DateTime.now(), DatePrecision.day, 'US')
+        DateWithPrecisionAndCountry(
+            DateTime(2023, 1, 1), DatePrecision.day, 'US')
       ], genres: [
         'Action',
         'Adventure'
       ], titles: [
         (title: 'Title 2', language: 'en')
       ], reviews: [
-        Review('8.5', 'John Doe', DateTime.now(), 100)
+        Review('8.5', 'John Doe', DateTime(2023, 1, 1), 100)
       ]);
       movie1.updateWithNew(movie2);
       expect(movie1.title, equals('Title 2'));
@@ -71,17 +76,20 @@ void main() {
       expect(movie1.same(movie2), isFalse);
     });
     test('can be encoded to JSON and back', () {
-      final movie = MovieData('Title 1',
-          DateWithPrecisionAndCountry(DateTime.now(), DatePrecision.day, 'US'));
+      final movie = MovieData(
+          'Title 1',
+          DateWithPrecisionAndCountry(
+              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
       movie.setDetails(releaseDates: [
-        DateWithPrecisionAndCountry(DateTime.now(), DatePrecision.day, 'US')
+        DateWithPrecisionAndCountry(
+            DateTime(2023, 1, 1), DatePrecision.day, 'US')
       ], genres: [
         'Action',
         'Adventure'
       ], titles: [
         (title: 'Title 2', language: 'en')
       ], reviews: [
-        Review('8.5', 'John Doe', DateTime.now(), 100)
+        Review('8.5', 'John Doe', DateTime(2023, 1, 1), 100)
       ]);
       final json = movie.toJsonEncodable();
       final movie2 = MovieData.fromJsonEncodable(json);
@@ -102,27 +110,30 @@ void main() {
     });
 
     test('toString()', () {
-      final movie = MovieData('Title 1',
-          DateWithPrecisionAndCountry(DateTime.now(), DatePrecision.day, 'US'));
+      final movie = MovieData(
+          'Title 1',
+          DateWithPrecisionAndCountry(
+              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
       movie.setDetails(releaseDates: [
-        DateWithPrecisionAndCountry(DateTime.now(), DatePrecision.day, 'US')
+        DateWithPrecisionAndCountry(
+            DateTime(2023, 1, 1), DatePrecision.day, 'US')
       ], genres: [
         'Action',
         'Adventure'
       ], titles: [
         (title: 'Title 2', language: 'en')
       ], reviews: [
-        Review('8.5', 'John Doe', DateTime.now(), 100)
+        Review('8.5', 'John Doe', DateTime(2023, 1, 1), 100)
       ]);
       expect(movie.toString(),
-          equals('Title 1 (November 16, 2023 (US); Action, Adventure)'));
+          equals('Title 1 (January 1, 2023 (US); Action, Adventure)'));
     });
   });
 
   group('DateWithPrecisionAndCountry', () {
     test('can be encoded to JSON and back', () {
-      final date =
-          DateWithPrecisionAndCountry(DateTime.now(), DatePrecision.day, 'US');
+      final date = DateWithPrecisionAndCountry(
+          DateTime(2023, 1, 1), DatePrecision.day, 'US');
       final json = date.toJsonEncodable();
       final date2 = DateWithPrecisionAndCountry.fromJsonEncodable(json);
       expect(date2.date, equals(date.date));

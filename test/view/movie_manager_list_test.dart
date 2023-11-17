@@ -16,11 +16,11 @@ void main() {
         MovieData(
             'Movie 1',
             DateWithPrecisionAndCountry(
-                DateTime.now(), DatePrecision.day, 'US')),
+                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
         MovieData(
             'Movie 2',
             DateWithPrecisionAndCountry(
-                DateTime.now(), DatePrecision.day, 'US')),
+                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
       ]);
       // pump the delay until the change is written to the cache, so no timers run when the test finishes
       await tester.pump(const Duration(seconds: 5));
@@ -38,11 +38,11 @@ void main() {
         MovieData(
             'Movie 1',
             DateWithPrecisionAndCountry(
-                DateTime.now(), DatePrecision.day, 'US')),
+                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
         MovieData(
             'Movie 2',
             DateWithPrecisionAndCountry(
-                DateTime.now(), DatePrecision.day, 'US')),
+                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
       ]);
 
       await tester.pumpWidget(
@@ -52,7 +52,7 @@ void main() {
         MovieData(
             'Movie 3',
             DateWithPrecisionAndCountry(
-                DateTime.now(), DatePrecision.day, 'US')),
+                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
       ]);
       // pump the delay until the change is written to the cache, so no timers run when the test finishes
       await tester.pump(const Duration(seconds: 5));
