@@ -33,6 +33,11 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Not explicitly supported platforms
+/windows/
+/macos/
+/ios/
+
 # Symbolication related
 app.*.symbols
 
