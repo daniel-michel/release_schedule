@@ -9,6 +9,7 @@ class LiveSearch extends ChangeNotifier {
   Duration minTimeBetweenRequests = const Duration(milliseconds: 200);
   late final DelayedFunctionCaller _searchCaller;
   final MovieManager manager;
+  bool loading = false;
   bool searchingOnline = false;
 
   LiveSearch(this.manager) {
@@ -21,16 +22,21 @@ class LiveSearch extends ChangeNotifier {
       return;
     }
     searchResults = manager.localSearch(search);
+    loading = true;
     _searchCaller.call();
     notifyListeners();
   }
 
   void searchOnline() async {
     if (searchTerm.isEmpty) {
+      loading = false;
+      notifyListeners();
       return;
     }
     if (searchingOnline) {
+      loading = true;
       _searchCaller.call();
+      notifyListeners();
       return;
     }
     searchingOnline = true;
@@ -49,6 +55,8 @@ class LiveSearch extends ChangeNotifier {
       notifyListeners();
     } finally {
       searchingOnline = false;
+      loading = false;
+      notifyListeners();
     }
   }
 }

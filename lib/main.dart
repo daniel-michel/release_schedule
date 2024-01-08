@@ -4,7 +4,7 @@ import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_list.dart';
 import 'package:release_schedule/view/movie_manager_list.dart';
-import 'package:release_schedule/view/swipe-transition.dart';
+import 'package:release_schedule/view/swipe_transition.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
 class HomePage extends StatefulWidget {
   final MovieManager manager;
 
-  HomePage(this.manager, {super.key});
+  const HomePage(this.manager, {super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -102,7 +102,10 @@ class SearchResultPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: liveSearch,
       builder: (context, child) {
-        return MovieList(liveSearch.searchResults);
+        return Column(children: [
+          liveSearch.loading ? const LinearProgressIndicator() : Container(),
+          Expanded(child: MovieList(liveSearch.searchResults)),
+        ]);
       },
     );
   }
