@@ -23,7 +23,7 @@ void main() {
       ], reviews: [
         Review('8.5', 'John Doe', DateTime(2023, 1, 1), 100)
       ]);
-      movie1.updateWithNew(movie2);
+      movie1.updateWithNewIgnoringUserControlled(movie2);
       expect(movie1.title, equals('Title 2'));
       expect(movie1.releaseDate.country, equals('UK'));
       expect(movie1.releaseDates!.length, equals(1));

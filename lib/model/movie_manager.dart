@@ -54,7 +54,7 @@ class MovieManager extends ChangeNotifier {
         added = true;
         actualMovies.add(movie);
       } else {
-        existing.updateWithNew(movie);
+        existing.updateWithNewIgnoringUserControlled(movie);
         actualMovies.add(existing);
       }
     }

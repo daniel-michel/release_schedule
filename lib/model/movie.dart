@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 class MovieData extends ChangeNotifier {
   String _title;
   DateWithPrecisionAndCountry _releaseDate;
+  bool _bookmarked = false;
 
   bool _hasDetails = false;
   List<DateWithPrecisionAndCountry>? _releaseDates;
@@ -19,6 +20,10 @@ class MovieData extends ChangeNotifier {
 
   DateWithPrecisionAndCountry get releaseDate {
     return _releaseDate;
+  }
+
+  bool get bookmarked {
+    return _bookmarked;
   }
 
   List<DateWithPrecisionAndCountry>? get releaseDates {
@@ -41,7 +46,9 @@ class MovieData extends ChangeNotifier {
     return _hasDetails;
   }
 
-  void updateWithNew(MovieData movie) {
+  /// Updates the information with that of a new version of the movie
+  /// but ignores fields that are user controlled, like whether the movie was bookmarked.
+  void updateWithNewIgnoringUserControlled(MovieData movie) {
     setDetails(
         title: movie.title,
         releaseDate: movie.releaseDate,
@@ -54,6 +61,7 @@ class MovieData extends ChangeNotifier {
   void setDetails(
       {String? title,
       DateWithPrecisionAndCountry? releaseDate,
+      bool? bookmarked,
       List<DateWithPrecisionAndCountry>? releaseDates,
       List<String>? genres,
       List<TitleInLanguage>? titles,
@@ -63,6 +71,9 @@ class MovieData extends ChangeNotifier {
     }
     if (releaseDate != null) {
       _releaseDate = releaseDate;
+    }
+    if (bookmarked != null) {
+      _bookmarked = bookmarked;
     }
     if (releaseDates != null) {
       _releaseDates = releaseDates;
@@ -85,6 +96,10 @@ class MovieData extends ChangeNotifier {
     return "$title (${_releaseDate.toString()}${_genres?.isNotEmpty ?? true ? "; ${_genres?.join(", ")}" : ""})";
   }
 
+  bool same(MovieData other) {
+    return title == other.title && releaseDate.date == other.releaseDate.date;
+  }
+
   Map toJsonEncodable() {
     List? releaseDatesByCountry =
         _releaseDates?.map((e) => e.toJsonEncodable()).toList();
@@ -92,6 +107,7 @@ class MovieData extends ChangeNotifier {
     return {
       "title": title,
       "releaseDate": _releaseDate.toJsonEncodable(),
+      "bookmarked": _bookmarked,
       "releaseDates": releaseDatesByCountry,
       "genres": genres,
       "titles": titlesByCountry,
@@ -99,15 +115,12 @@ class MovieData extends ChangeNotifier {
     };
   }
 
-  bool same(MovieData other) {
-    return title == other.title && releaseDate.date == other.releaseDate.date;
-  }
-
   MovieData.fromJsonEncodable(Map json)
       : _title = json["title"],
         _releaseDate =
             DateWithPrecisionAndCountry.fromJsonEncodable(json["releaseDate"]) {
     setDetails(
+        bookmarked: json["bookmarked"] as bool,
         genres: (json["genres"] as List<dynamic>?)
             ?.map((genre) => genre as String)
             .toList(),

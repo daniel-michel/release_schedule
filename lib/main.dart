@@ -43,10 +43,30 @@ class HomePage extends StatelessWidget {
               child: const Icon(Icons.delete))
         ],
       ),
-      body: MovieManagerList(manager),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.refresh),
-        onPressed: () => manager.loadUpcomingMovies(),
+      body: DefaultTabController(
+        length: 2,
+        child: Column(
+          children: [
+            Expanded(
+              child: TabBarView(
+                children: [
+                  Scaffold(
+                    body: MovieManagerList(manager),
+                    floatingActionButton: FloatingActionButton(
+                      child: const Icon(Icons.refresh),
+                      onPressed: () => manager.loadUpcomingMovies(),
+                    ),
+                  ),
+                  MovieManagerList(manager, filter: (movie) => movie.bookmarked)
+                ],
+              ),
+            ),
+            const TabBar(tabs: [
+              Tab(icon: Icon(Icons.list), child: Text("Upcoming")),
+              Tab(icon: Icon(Icons.bookmark), child: Text("Bookmarked")),
+            ]),
+          ],
+        ),
       ),
     );
   }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_list.dart';
 
 class MovieManagerList extends StatelessWidget {
   final MovieManager manager;
-  const MovieManagerList(this.manager, {super.key});
+  final bool Function(MovieData)? filter;
+  const MovieManagerList(this.manager, {this.filter, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +16,7 @@ class MovieManagerList extends StatelessWidget {
         return Column(
           children: [
             manager.loading ? const LinearProgressIndicator() : Container(),
-            Expanded(child: MovieList(manager.movies))
+            Expanded(child: MovieList(manager.movies, filter: filter))
           ],
         );
       },
