@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:release_schedule/api/movie_api.dart';
 import 'package:release_schedule/api/wikidata_movie_api.dart';
+import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_manager_list.dart';
 
@@ -37,11 +38,7 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Release Schedule"),
-        actions: [
-          FilledButton(
-              onPressed: () => manager.removeMoviesWhere((movie) => true),
-              child: const Icon(Icons.delete))
-        ],
+        actions: [HamburgerMenu(manager)],
       ),
       body: DefaultTabController(
         length: 2,
@@ -51,7 +48,12 @@ class HomePage extends StatelessWidget {
               child: TabBarView(
                 children: [
                   Scaffold(
-                    body: MovieManagerList(manager),
+                    body: MovieManagerList(
+                      manager,
+                      // Only show movies that have a release date with at least month precision
+                      filter: (movie) =>
+                          movie.releaseDate.precision >= DatePrecision.month,
+                    ),
                     floatingActionButton: FloatingActionButton(
                       child: const Icon(Icons.refresh),
                       onPressed: () => manager.loadUpcomingMovies(),
@@ -68,6 +70,31 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class HamburgerMenu extends StatelessWidget {
+  final MovieManager manager;
+  const HamburgerMenu(this.manager, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton(
+      icon: const Icon(Icons.menu),
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem(
+            child: const Text("Remove all not bookmarked"),
+            onTap: () =>
+                manager.removeMoviesWhere((movie) => !movie.bookmarked),
+          ),
+          PopupMenuItem(
+            child: const Text("Remove all"),
+            onTap: () => manager.removeMoviesWhere((movie) => true),
+          ),
+        ];
+      },
     );
   }
 }

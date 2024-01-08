@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:release_schedule/model/date_format.dart';
 import 'package:release_schedule/model/movie.dart';
+import 'package:release_schedule/view/movie_page.dart';
 
 class MovieItem extends StatelessWidget {
   final MovieData movie;
@@ -21,6 +22,16 @@ class MovieItem extends StatelessWidget {
                 : Icons.bookmark_border),
             onPressed: () => movie.setDetails(bookmarked: !movie.bookmarked),
           ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) {
+                  return MoviePage(movie);
+                },
+              ),
+            );
+          },
         );
       },
     );

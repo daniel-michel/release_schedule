@@ -146,6 +146,24 @@ class MovieData extends ChangeNotifier {
 
 enum DatePrecision { decade, year, month, day, hour, minute }
 
+extension DatePrecisionComparison on DatePrecision {
+  bool operator <(DatePrecision other) {
+    return index < other.index;
+  }
+
+  bool operator <=(DatePrecision other) {
+    return index <= other.index;
+  }
+
+  bool operator >(DatePrecision other) {
+    return index > other.index;
+  }
+
+  bool operator >=(DatePrecision other) {
+    return index >= other.index;
+  }
+}
+
 typedef TitleInLanguage = ({String title, String language});
 
 class DateWithPrecisionAndCountry {
@@ -167,7 +185,11 @@ class DateWithPrecisionAndCountry {
 
   @override
   String toString() {
-    String dateString = switch (precision) {
+    return "${toDateString()} ($country)";
+  }
+
+  String toDateString() {
+    return switch (precision) {
       DatePrecision.decade =>
         "${DateFormat("yyyy").format(date).substring(0, 3)}0s",
       DatePrecision.year => date.year.toString(),
@@ -176,7 +198,6 @@ class DateWithPrecisionAndCountry {
       DatePrecision.hour => DateFormat("MMMM d, yyyy, HH").format(date),
       DatePrecision.minute => DateFormat("MMMM d, yyyy, HH:mm").format(date)
     };
-    return "$dateString ($country)";
   }
 }
 

@@ -138,7 +138,7 @@ class WikidataMovieData extends MovieData {
       String country = _getCachedLabelForEntity(selectInJson<String>(dateClaim,
                   "qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id")
               .firstOrNull ??
-          "no country");
+          "unknown location");
       return DateWithPrecisionAndCountry(DateTime.parse(value["time"]),
           _precisionFromWikidata(value["precision"]), country);
     }).toList();
@@ -153,6 +153,7 @@ class WikidataMovieData extends MovieData {
         WikidataMovieData(title, releaseDates[0], entityId);
     movie.setDetails(
       titles: titles,
+      releaseDates: releaseDates,
       genres: genres,
     );
     return movie;
@@ -168,7 +169,8 @@ SELECT
 WHERE {
   ?movie wdt:P31 wd:Q11424;         # Q11424 is the item for "film"
          wdt:P577 ?releaseDate.      # P577 is the "publication date" property
-  FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime))
+  ?movie p:P577/psv:P577 [wikibase:timePrecision ?precision].
+  FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime) && ?precision >= 10)
 }
 GROUP BY ?movie
 ORDER BY ?minReleaseDate
