@@ -1,7 +1,7 @@
 import 'dart:async';
 
 class DelayedFunctionCaller {
-  final Function function;
+  final void Function() function;
   final Duration duration;
   Timer? _timer;
 
@@ -14,8 +14,6 @@ class DelayedFunctionCaller {
     }
 
     // Create a timer that calls the function after the specified duration.
-    _timer = Timer(duration, () {
-      function();
-    });
+    _timer = Timer(duration, function);
   }
 }

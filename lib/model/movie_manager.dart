@@ -67,8 +67,8 @@ class MovieManager extends ChangeNotifier {
   void _insertMovie(MovieData movie) {
     int min = 0;
     int max = movies.length - 1;
-    while (min - 1 < max) {
-      int center = ((min + max) / 2).floor();
+    while (min <= max) {
+      int center = (min + max) ~/ 2;
       int diff =
           movie.releaseDate.date.compareTo(movies[center].releaseDate.date);
       if (diff < 0) {
