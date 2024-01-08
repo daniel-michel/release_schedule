@@ -50,16 +50,21 @@ class HomePage extends StatelessWidget {
                   Scaffold(
                     body: MovieManagerList(
                       manager,
-                      // Only show movies that have a release date with at least month precision
+                      // Only show movies that are bookmarked or have a release date with at least month precision and at least one title
                       filter: (movie) =>
-                          movie.releaseDate.precision >= DatePrecision.month,
+                          movie.bookmarked ||
+                          (movie.releaseDate.precision >= DatePrecision.month &&
+                              (movie.titles?.length ?? 0) >= 1),
                     ),
                     floatingActionButton: FloatingActionButton(
                       child: const Icon(Icons.refresh),
                       onPressed: () => manager.loadUpcomingMovies(),
                     ),
                   ),
-                  MovieManagerList(manager, filter: (movie) => movie.bookmarked)
+                  MovieManagerList(
+                    manager,
+                    filter: (movie) => movie.bookmarked,
+                  )
                 ],
               ),
             ),

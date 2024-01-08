@@ -192,9 +192,9 @@ class DateWithPrecisionAndCountry {
     return switch (precision) {
       DatePrecision.decade =>
         "${DateFormat("yyyy").format(date).substring(0, 3)}0s",
-      DatePrecision.year => date.year.toString(),
-      DatePrecision.month => DateFormat("MMMM yyyy").format(date),
-      DatePrecision.day => DateFormat("MMMM d, yyyy").format(date),
+      DatePrecision.year => DateFormat.y().format(date),
+      DatePrecision.month => DateFormat.yMMMM().format(date),
+      DatePrecision.day => DateFormat.yMMMMd().format(date),
       DatePrecision.hour => DateFormat("MMMM d, yyyy, HH").format(date),
       DatePrecision.minute => DateFormat("MMMM d, yyyy, HH:mm").format(date)
     };
