@@ -16,8 +16,8 @@ class MovieItem extends StatelessWidget {
           title: Text(movie.title),
           subtitle: Text(
               "${dateRelativeToNow(movie.releaseDate.date)}, ${movie.releaseDate.toString()}, ${movie.genres?.join(", ") ?? ""}"),
-          trailing: TextButton(
-            child: Icon(movie.bookmarked
+          trailing: IconButton(
+            icon: Icon(movie.bookmarked
                 ? Icons.bookmark_added
                 : Icons.bookmark_border),
             onPressed: () => movie.setDetails(bookmarked: !movie.bookmarked),

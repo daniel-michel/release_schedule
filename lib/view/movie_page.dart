@@ -29,9 +29,14 @@ class MoviePage extends StatelessWidget {
       animation: movie,
       builder: (context, child) {
         return Scaffold(
-          appBar: AppBar(
-            title: Text(movie.title),
-          ),
+          appBar: AppBar(title: Text(movie.title), actions: [
+            IconButton(
+              icon: Icon(movie.bookmarked
+                  ? Icons.bookmark_added
+                  : Icons.bookmark_outline),
+              onPressed: () => movie.setDetails(bookmarked: !movie.bookmarked),
+            ),
+          ]),
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(12.0),

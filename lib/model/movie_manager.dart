@@ -6,6 +6,7 @@ import 'package:release_schedule/api/wikidata_movie_api.dart';
 import 'package:release_schedule/model/delayed_function_caller.dart';
 import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie.dart';
+import 'package:release_schedule/model/search.dart';
 
 final movieManager = MovieManager(WikidataMovieApi(),
     LocalMovieStorageGetStorage(WikidataMovieData.fromEncodable));
@@ -15,7 +16,7 @@ class MovieManager extends ChangeNotifier {
   final LocalMovieStorage cache;
   final MovieApi api;
   bool loading = false;
-  DelayedFunctionCaller? cacheUpdater;
+  late final DelayedFunctionCaller cacheUpdater;
   bool cacheLoaded = false;
 
   MovieManager(this.api, this.cache) {
@@ -31,7 +32,7 @@ class MovieManager extends ChangeNotifier {
   }
 
   void _moviesModified({bool withoutAddingOrRemoving = false}) {
-    cacheUpdater?.call();
+    cacheUpdater.call();
     if (!withoutAddingOrRemoving) {
       // only notify listeners if movies are added or removed
       // if they are modified in place they will notify listeners themselves
@@ -108,10 +109,19 @@ class MovieManager extends ChangeNotifier {
   }
 
   /// Only search locally cached movies.
-  localSearch(String search) {}
+  List<MovieData> localSearch(String search) {
+    var results = searchList(
+        movies,
+        search,
+        (movie) => [
+              movie.title,
+              ...(movie.titles?.map((title) => title.title) ?? []),
+            ]);
+    return results;
+  }
 
   /// Online search for movies.
-  Future<List<MovieData>> search(String search) async {
+  Future<List<MovieData>> onlineSearch(String search) async {
     List<MovieData> movies = await api.searchForMovies(search);
     return addMovies(movies);
   }

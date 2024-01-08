@@ -12,7 +12,7 @@ void main() {
       MovieManager movieManager = MovieManager(MovieApi(), LocalMovieStorage());
       await tester.pumpWidget(MaterialApp(home: HomePage(movieManager)));
 
-      expect(find.text('Release Schedule'), findsOneWidget);
+      expect(find.text('Search'), findsOneWidget);
     });
 
     testWidgets('displays list of releases', (WidgetTester tester) async {

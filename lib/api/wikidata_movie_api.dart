@@ -27,6 +27,11 @@ class WikidataProperties {
   static const String placeOfPublication = "P291";
 }
 
+class WikidataEntities {
+  static const String film = "Q11424";
+  static const String filmProject = "Q18011172";
+}
+
 ApiManager _wikidataApi =
     ApiManager("https://www.wikidata.org/w/api.php?origin=*");
 
@@ -43,19 +48,26 @@ class WikidataMovieApi implements MovieApi {
   @override
   Future<List<WikidataMovieData>> getUpcomingMovies(DateTime startDate,
       [int count = 100]) async {
-    Response response = await queryApi.get(
-        "&query=${Uri.encodeComponent(_createUpcomingMovieQuery(startDate, count))}");
-    if (response.statusCode != 200) {
-      throw Exception(
-          "The Wikidata request for upcoming movies failed with status ${response.statusCode} ${response.reasonPhrase}");
+    Response filmResponse = await queryApi.get(
+        "&query=${Uri.encodeComponent(_createUpcomingMovieQuery(startDate, WikidataEntities.film, count))}");
+    Response filmProjectResponse = await queryApi.get(
+        "&query=${Uri.encodeComponent(_createUpcomingMovieQuery(startDate, WikidataEntities.filmProject, count))}");
+    List<Response> responses = [filmResponse, filmProjectResponse];
+    for (var response in responses) {
+      if (response.statusCode != 200) {
+        throw Exception(
+            "The Wikidata request for upcoming movies failed with status ${response.statusCode} ${response.reasonPhrase}");
+      }
     }
-    Map<String, dynamic> result = jsonDecode(response.body);
-    List<dynamic> entries = result["results"]["bindings"];
+    Iterable<Map<String, dynamic>> results =
+        responses.map((response) => jsonDecode(response.body));
+    Iterable<dynamic> entries =
+        results.expand((result) => result["results"]["bindings"]);
     List<String> ids = entries
         .map((entry) =>
             RegExp(r"Q\d+$").firstMatch(entry["movie"]["value"])![0]!)
         .toList();
-    return _getMovieDataFromIds(ids);
+    return await _getMovieDataFromIds(ids);
   }
 
   Future<List<WikidataMovieData>> _getMovieDataFromIds(
@@ -92,9 +104,20 @@ class WikidataMovieApi implements MovieApi {
   }
 
   @override
-  Future<List<WikidataMovieData>> searchForMovies(String searchTerm) {
-    // TODO: implement searchForMovies
-    throw UnimplementedError();
+  Future<List<WikidataMovieData>> searchForMovies(String searchTerm) async {
+    String haswbstatement =
+        "haswbstatement:${WikidataProperties.instanceOf}=${WikidataEntities.film}|${WikidataProperties.instanceOf}=${WikidataEntities.filmProject}";
+    String query =
+        "&action=query&list=search&format=json&srsearch=${Uri.encodeComponent(searchTerm)}%20$haswbstatement";
+    Response result = await _wikidataApi.get(query);
+    Map<String, dynamic> json = jsonDecode(result.body);
+    List<Map<String, dynamic>> searchResults =
+        selectInJson<Map<String, dynamic>>(json, "query.search.*").toList();
+    List<String> ids = searchResults
+        .map((result) => result["title"] as String)
+        .where((title) => RegExp(r"^Q\d+$").hasMatch(title))
+        .toList();
+    return await _getMovieDataFromIds(ids);
   }
 }
 
@@ -133,6 +156,7 @@ class WikidataMovieData extends MovieData {
         .toList();
     List<DateWithPrecisionAndCountry> releaseDates =
         selectInJson(claims, "${WikidataProperties.publicationDate}.*")
+            .where((dateClaim) => dateClaim["rank"] != "deprecated")
             .map<DateWithPrecisionAndCountry>((dateClaim) {
       var value = selectInJson(dateClaim, "mainsnak.datavalue.value").first;
       String country = _getCachedLabelForEntity(selectInJson<String>(dateClaim,
@@ -149,8 +173,13 @@ class WikidataMovieData extends MovieData {
             claims, "${WikidataProperties.genre}.*.mainsnak.datavalue.value.id")
         .map(_getCachedLabelForEntity)
         .toList();
-    WikidataMovieData movie =
-        WikidataMovieData(title, releaseDates[0], entityId);
+    WikidataMovieData movie = WikidataMovieData(
+        title,
+        releaseDates.isNotEmpty
+            ? releaseDates[0]
+            : DateWithPrecisionAndCountry(
+                DateTime.now(), DatePrecision.decade, "unknown location"),
+        entityId);
     movie.setDetails(
       titles: titles,
       releaseDates: releaseDates,
@@ -160,17 +189,19 @@ class WikidataMovieData extends MovieData {
   }
 }
 
-String _createUpcomingMovieQuery(DateTime startDate, int limit) {
+String _createUpcomingMovieQuery(
+    DateTime startDate, String instanceOf, int limit) {
   String date = DateFormat("yyyy-MM-dd").format(startDate);
   return """
 SELECT
   ?movie
   (MIN(?releaseDate) as ?minReleaseDate)
 WHERE {
-  ?movie wdt:P31 wd:Q11424;         # Q11424 is the item for "film"
-         wdt:P577 ?releaseDate.      # P577 is the "publication date" property
-  ?movie p:P577/psv:P577 [wikibase:timePrecision ?precision].
-  FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime) && ?precision >= 10)
+  ?movie wdt:${WikidataProperties.instanceOf} wd:$instanceOf;
+         wdt:${WikidataProperties.publicationDate} ?releaseDate.
+  ?movie p:${WikidataProperties.publicationDate}/psv:${WikidataProperties.publicationDate} [wikibase:timePrecision ?precision].
+  FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime))
+  FILTER (?precision >= 10)
 }
 GROUP BY ?movie
 ORDER BY ?minReleaseDate

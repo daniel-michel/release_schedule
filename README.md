@@ -25,10 +25,11 @@ SELECT
   ?movie
   (MIN(?releaseDate) as ?minReleaseDate)
 WHERE {
-  ?movie wdt:P31 wd:Q11424;         # Q11424 is the item for "film"
-         wdt:P577 ?releaseDate.      # P577 is the "publication date" property
-  ?movie p:P577/psv:P577 [wikibase:timePrecision ?precision].
-  FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime) && ?precision >= 10)
+  ?movie wdt:P31 wd:Q18011172;
+         p:P577/psv:P577 [wikibase:timePrecision ?precision];
+         wdt:P577 ?releaseDate.
+  FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime))
+  FILTER (?precision >= 10)
 }
 GROUP BY ?movie
 ORDER BY ?minReleaseDate
@@ -37,5 +38,7 @@ LIMIT $limit
 Where `$limit` is the maximum number of movies that are retrieved and `$date` the starting date from which movies are retrieved.
 `$limit` is currently set to 100 and `$date` one week before the current one.
 However, because there are multiple publication dates for most movies, the retrieved movies just need to have one publication date that is on or after `$date` for the movie to be included in the result. The `minReleaseDate` is not necessarily the release date displayed in the app, therefore some movies in the app might show up as having been released a long time ago.
+
+The wd:Q18011172 is a "film project" these are films that are unpublished uor unfinished, but films that release soon are usually finished and might already be released in some countries and might instead be wd:Q11424 "film". Therefore the query is run for each of these categories.
 
 To get additional information about the movies and all release dates (in case some are before `$date` and some after) the API endpoint "https://www.wikidata.org/w/api.php?action=wbgetentities" is used.

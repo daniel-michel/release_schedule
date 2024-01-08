@@ -7,7 +7,7 @@
 ///
 /// Returns an [Iterable] of the selected values.
 ///
-/// Also see [selectInJsonWithPath] for a version that returns the path to the selected values
+/// Also see [selectInJsonWithPath] for a version that returns the path to the selected values.
 Iterable<T> selectInJson<T>(dynamic json, String path) {
   return selectInJsonWithPath<T>(json, path).map((e) => e.value);
 }
@@ -67,7 +67,7 @@ Iterable<({T value, String path})> selectInJsonWithPath<T>(
   } else if (json is Map) {
     dynamic value = json[first];
     if (value != null) {
-      yield* selectInJsonWithPath<T>(value, pathParts.join("."));
+      yield* selectInJsonWithPath<T>(value, rest);
     }
   }
 }
