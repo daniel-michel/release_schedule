@@ -25,6 +25,7 @@ class WikidataProperties {
   static const String reviewScore = "P444";
   static const String fskFilmRating = "P1981";
   static const String placeOfPublication = "P291";
+  static const String shortName = "P1813";
 }
 
 class WikidataEntities {
@@ -236,16 +237,24 @@ Future<Map<String, String>> _getLabelsForEntities(
     final start = i * batchSize;
     final end = min((i + 1) * batchSize, entityIds.length);
     Response response = await _wikidataApi.get(
-        "&action=wbgetentities&format=json&props=labels&ids=${entityIds.sublist(start, end).join("|")}");
+        "&action=wbgetentities&format=json&props=labels|claims&ids=${entityIds.sublist(start, end).join("|")}");
     Map<String, dynamic> result = jsonDecode(response.body);
     Map<String, dynamic> batchEntities = result["entities"];
     for (String entityId in batchEntities.keys) {
-      Map<String, dynamic> labels = batchEntities[entityId]["labels"];
-      String label = labels.containsKey("en")
-          ? labels["en"]["value"]
-          : labels[labels.keys.first]["value"];
-      labels[entityId] = label;
-      _labelCache[entityId] = label;
+      String? shortName = selectInJson(batchEntities[entityId],
+              "claims.${WikidataProperties.shortName}.*.mainsnak.datavalue.value")
+          .where((value) => value["language"] == "en")
+          .map((value) => (value["text"] as String))
+          .firstOrNull;
+      Map<String, dynamic> responseLabels = batchEntities[entityId]["labels"];
+      if (shortName != null) {
+        _labelCache[entityId] = labels[entityId] = shortName;
+        continue;
+      }
+      String label = responseLabels.containsKey("en")
+          ? responseLabels["en"]["value"]
+          : responseLabels[responseLabels.keys.first]["value"];
+      _labelCache[entityId] = labels[entityId] = label;
     }
   }
   return labels;

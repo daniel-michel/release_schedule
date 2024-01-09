@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:release_schedule/model/date_format.dart';
 import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/view/movie_page.dart';
 
@@ -14,8 +13,7 @@ class MovieItem extends StatelessWidget {
       builder: (context, widget) {
         return ListTile(
           title: Text(movie.title),
-          subtitle: Text(
-              "${dateRelativeToNow(movie.releaseDate.date)}, ${movie.releaseDate.toString()}, ${movie.genres?.join(", ") ?? ""}"),
+          subtitle: Text(movie.genres?.join(", ") ?? ""),
           trailing: IconButton(
             icon: Icon(movie.bookmarked
                 ? Icons.bookmark_added

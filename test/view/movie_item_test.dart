@@ -24,9 +24,6 @@ void main() {
 
     expect(find.text('Test Movie'), findsOneWidget);
 
-    final formattedDate = movie.releaseDate.toString();
-    expect(find.textContaining(formattedDate), findsOneWidget);
-
     expect(find.textContaining('Action, Adventure'), findsOneWidget);
   });
 

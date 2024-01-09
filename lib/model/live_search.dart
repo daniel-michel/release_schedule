@@ -6,13 +6,16 @@ import 'package:release_schedule/model/movie_manager.dart';
 class LiveSearch extends ChangeNotifier {
   String searchTerm = "";
   List<MovieData> searchResults = [];
-  Duration minTimeBetweenRequests = const Duration(milliseconds: 200);
   late final DelayedFunctionCaller _searchCaller;
   final MovieManager manager;
   bool searchingOnline = false;
 
   LiveSearch(this.manager) {
-    _searchCaller = DelayedFunctionCaller(searchOnline, minTimeBetweenRequests);
+    _searchCaller = DelayedFunctionCaller(
+      searchOnline,
+      const Duration(milliseconds: 750),
+      resetTimerOnCall: true,
+    );
   }
 
   get loading => searchingOnline || _searchCaller.scheduled;
