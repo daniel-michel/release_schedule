@@ -168,8 +168,8 @@ class WikidataMovieData extends MovieData {
           _precisionFromWikidata(value["precision"]), country);
     }).toList();
     // Sort release dates with higher precision to the beginning
-    releaseDates
-        .sort((a, b) => -a.precision.index.compareTo(b.precision.index));
+    releaseDates.sort((a, b) => -a.dateWithPrecision.precision.index
+        .compareTo(b.dateWithPrecision.precision.index));
     List<String>? genres = selectInJson<String>(
             claims, "${WikidataProperties.genre}.*.mainsnak.datavalue.value.id")
         .map(_getCachedLabelForEntity)

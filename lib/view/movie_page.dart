@@ -95,7 +95,9 @@ class MoviePage extends StatelessWidget {
                               TableCell(
                                   child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text(releaseDate.toDateString()),
+                                child: Text(
+                                  releaseDate.dateWithPrecision.toString(),
+                                ),
                               ))
                             ],
                           );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:release_schedule/model/live_search.dart';
 import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/model/movie_manager.dart';
-import 'package:release_schedule/view/movie_list.dart';
+import 'package:release_schedule/view/movie_item.dart';
 import 'package:release_schedule/view/movie_manager_list.dart';
 import 'package:release_schedule/view/swipe_transition.dart';
 
@@ -126,10 +126,20 @@ class SearchResultPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: liveSearch,
       builder: (context, child) {
-        return Column(children: [
-          liveSearch.loading ? const LinearProgressIndicator() : Container(),
-          Expanded(child: MovieList(liveSearch.searchResults)),
-        ]);
+        return Column(
+          children: [
+            liveSearch.loading ? const LinearProgressIndicator() : Container(),
+            Expanded(
+              child: ListView.builder(
+                itemCount: liveSearch.searchResults.length,
+                itemBuilder: (context, index) => MovieItem(
+                  liveSearch.searchResults[index],
+                  showReleaseDate: true,
+                ),
+              ),
+            ),
+          ],
+        );
       },
     );
   }
@@ -158,7 +168,8 @@ class OverviewPage extends StatelessWidget {
                     // Only show movies that are bookmarked or have a release date with at least month precision and at least one title
                     filter: (movie) =>
                         movie.bookmarked ||
-                        (movie.releaseDate.precision >= DatePrecision.month &&
+                        (movie.releaseDate.dateWithPrecision.precision >=
+                                DatePrecision.month &&
                             (movie.titles?.length ?? 0) >= 1),
                   ),
                   floatingActionButton: FloatingActionButton(
@@ -209,8 +220,9 @@ class HamburgerMenu extends StatelessWidget {
             onTap: () => manager.removeMoviesWhere((movie) =>
                 !movie.bookmarked &&
                 !(movie.releaseDates?.any((date) =>
-                        date.precision >= DatePrecision.month &&
-                        date.date.isAfter(DateTime.now()
+                        date.dateWithPrecision.precision >=
+                            DatePrecision.month &&
+                        date.dateWithPrecision.date.isAfter(DateTime.now()
                             .subtract(const Duration(days: 30)))) ??
                     false)),
           ),

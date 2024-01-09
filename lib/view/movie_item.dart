@@ -4,7 +4,8 @@ import 'package:release_schedule/view/movie_page.dart';
 
 class MovieItem extends StatelessWidget {
   final MovieData movie;
-  const MovieItem(this.movie, {super.key});
+  final bool showReleaseDate;
+  const MovieItem(this.movie, {this.showReleaseDate = false, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +14,10 @@ class MovieItem extends StatelessWidget {
       builder: (context, widget) {
         return ListTile(
           title: Text(movie.title),
-          subtitle: Text(movie.genres?.join(", ") ?? ""),
+          subtitle: Text(
+            (showReleaseDate ? "${movie.releaseDate} " : "") +
+                (movie.genres?.join(", ") ?? ""),
+          ),
           trailing: IconButton(
             icon: Icon(movie.bookmarked
                 ? Icons.bookmark_added

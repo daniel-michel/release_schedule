@@ -97,7 +97,8 @@ class MovieData extends ChangeNotifier {
   }
 
   bool same(MovieData other) {
-    return title == other.title && releaseDate.date == other.releaseDate.date;
+    return title == other.title &&
+        releaseDate.dateWithPrecision == other.releaseDate.dateWithPrecision;
   }
 
   Map toJsonEncodable() {
@@ -166,29 +167,23 @@ extension DatePrecisionComparison on DatePrecision {
 
 typedef TitleInLanguage = ({String title, String language});
 
-class DateWithPrecisionAndCountry {
+class DateWithPrecision implements Comparable<DateWithPrecision> {
   DateTime date;
   DatePrecision precision;
-  String country;
 
-  DateWithPrecisionAndCountry(this.date, this.precision, this.country);
+  DateWithPrecision(this.date, this.precision);
 
-  DateWithPrecisionAndCountry.fromJsonEncodable(List<dynamic> json)
+  DateWithPrecision.fromJsonEncodable(List<dynamic> json)
       : date = DateTime.parse(json[0]),
         precision = DatePrecision.values
-            .firstWhere((element) => element.name == json[1]),
-        country = json[2];
+            .firstWhere((element) => element.name == json[1]);
 
-  toJsonEncodable() {
-    return [date.toIso8601String(), precision.name, country];
+  List<dynamic> toJsonEncodable() {
+    return [date.toIso8601String(), precision.name];
   }
 
   @override
   String toString() {
-    return "${toDateString()} ($country)";
-  }
-
-  String toDateString() {
     return switch (precision) {
       DatePrecision.decade =>
         "${DateFormat("yyyy").format(date).substring(0, 3)}0s",
@@ -198,6 +193,77 @@ class DateWithPrecisionAndCountry {
       DatePrecision.hour => DateFormat("MMMM d, yyyy, HH").format(date),
       DatePrecision.minute => DateFormat("MMMM d, yyyy, HH:mm").format(date)
     };
+  }
+
+  @override
+  int compareTo(DateWithPrecision other) {
+    if (date.isBefore(other.date)) {
+      return -1;
+    } else if (date.isAfter(other.date)) {
+      return 1;
+    } else {
+      return precision.index - other.precision.index;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DateWithPrecision &&
+        date == other.date &&
+        precision == other.precision;
+  }
+
+  @override
+  int get hashCode {
+    return date.hashCode ^ precision.hashCode;
+  }
+
+  bool includes(DateTime date) {
+    switch (precision) {
+      case DatePrecision.decade:
+        return this.date.year ~/ 10 == date.year ~/ 10;
+      case DatePrecision.year:
+        return this.date.year == date.year;
+      case DatePrecision.month:
+        return this.date.year == date.year && this.date.month == date.month;
+      case DatePrecision.day:
+        return this.date.year == date.year &&
+            this.date.month == date.month &&
+            this.date.day == date.day;
+      case DatePrecision.hour:
+        return this.date.year == date.year &&
+            this.date.month == date.month &&
+            this.date.day == date.day &&
+            this.date.hour == date.hour;
+      case DatePrecision.minute:
+        return this.date.year == date.year &&
+            this.date.month == date.month &&
+            this.date.day == date.day &&
+            this.date.hour == date.hour &&
+            this.date.minute == date.minute;
+    }
+  }
+}
+
+class DateWithPrecisionAndCountry {
+  final DateWithPrecision dateWithPrecision;
+  final String country;
+
+  DateWithPrecisionAndCountry(
+      DateTime date, DatePrecision precision, this.country)
+      : dateWithPrecision = DateWithPrecision(date, precision);
+
+  DateWithPrecisionAndCountry.fromJsonEncodable(List<dynamic> json)
+      : dateWithPrecision = DateWithPrecision.fromJsonEncodable(json),
+        country = json[2];
+
+  toJsonEncodable() {
+    return dateWithPrecision.toJsonEncodable() + [country];
+  }
+
+  @override
+  String toString() {
+    return "${dateWithPrecision.toString()} ($country)";
   }
 }
 

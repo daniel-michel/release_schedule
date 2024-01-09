@@ -136,8 +136,9 @@ void main() {
           DateTime(2023, 1, 1), DatePrecision.day, 'US');
       final json = date.toJsonEncodable();
       final date2 = DateWithPrecisionAndCountry.fromJsonEncodable(json);
-      expect(date2.date, equals(date.date));
-      expect(date2.precision, equals(date.precision));
+      expect(date2.dateWithPrecision, equals(date.dateWithPrecision));
+      expect(date2.dateWithPrecision.precision,
+          equals(date.dateWithPrecision.precision));
       expect(date2.country, equals(date.country));
     });
 
