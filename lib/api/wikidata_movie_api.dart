@@ -157,17 +157,7 @@ class WikidataMovieData extends MovieData {
             ) as TitleInLanguage)
         .toList();
     List<DateWithPrecisionAndCountry> releaseDates =
-        selectInJson(claims, "${WikidataProperties.publicationDate}.*")
-            .where((dateClaim) => dateClaim["rank"] != "deprecated")
-            .map<DateWithPrecisionAndCountry>((dateClaim) {
-      var value = selectInJson(dateClaim, "mainsnak.datavalue.value").first;
-      String country = _getCachedLabelForEntity(selectInJson<String>(dateClaim,
-                  "qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id")
-              .firstOrNull ??
-          "unknown location");
-      return DateWithPrecisionAndCountry(DateTime.parse(value["time"]),
-          _precisionFromWikidata(value["precision"]), country);
-    }).toList();
+        _getReleaseDates(claims).toList();
     // Sort release dates with higher precision to the beginning
     releaseDates.sort((a, b) => -a.dateWithPrecision.precision.index
         .compareTo(b.dateWithPrecision.precision.index));
@@ -188,6 +178,25 @@ class WikidataMovieData extends MovieData {
       genres: genres,
     );
     return movie;
+  }
+
+  static Iterable<DateWithPrecisionAndCountry> _getReleaseDates(
+      Map<String, dynamic> claims) {
+    return selectInJson(claims, "${WikidataProperties.publicationDate}.*")
+        .where((dateClaim) => dateClaim["rank"] != "deprecated")
+        .expand<DateWithPrecisionAndCountry>((dateClaim) {
+      var value = selectInJson(dateClaim, "mainsnak.datavalue.value").first;
+      Iterable<String> countries = (selectInJson<String>(dateClaim,
+              "qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id"))
+          .map(_getCachedLabelForEntity);
+      if (countries.isEmpty) {
+        countries = ["unknown location"];
+      }
+      return countries.map((country) => DateWithPrecisionAndCountry(
+          DateTime.parse(value["time"]),
+          _precisionFromWikidata(value["precision"]),
+          country));
+    });
   }
 }
 
