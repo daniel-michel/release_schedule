@@ -12,15 +12,6 @@ Iterable<T> selectInJson<T>(dynamic json, String path) {
   return selectInJsonWithPath<T>(json, path).map((e) => e.value);
 }
 
-Map<String, Iterable<dynamic>> selectMultipleInJson(
-    dynamic json, Map<String, String> selector) {
-  Map<String, Iterable<dynamic>> result = {};
-  for (String key in selector.keys) {
-    result[key] = selectInJsonWithPath(json, selector[key]!);
-  }
-  return result;
-}
-
 /// Select values in nested [List] and [Map] structures using a path that may contain wildcards.
 ///
 /// The maps must always use [String] keys.
@@ -40,13 +31,18 @@ Iterable<({T value, String path})> selectInJsonWithPath<T>(
   List<String> pathParts = path.split(".");
   String first = pathParts.removeAt(0);
   String rest = pathParts.join(".");
-  addFirstToPath(({T value, String path}) element) => (
-        value: element.value,
-        path: element.path.isEmpty ? first : "$first.${element.path}"
-      );
+  ({T value, String path}) addFirstToPath(({T value, String path}) element) {
+    return (
+      value: element.value,
+      path: element.path.isEmpty ? first : "$first.${element.path}"
+    );
+  }
 
   if (first == "*" || first == "**") {
     String continueWithPath = first == "*" ? rest : path;
+    if (first == "**") {
+      yield* selectInJsonWithPath<T>(json, rest);
+    }
     if (json is List) {
       yield* json
           .expand((e) => selectInJsonWithPath<T>(e, continueWithPath))

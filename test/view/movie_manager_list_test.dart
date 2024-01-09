@@ -12,7 +12,7 @@ import 'package:release_schedule/view/movie_manager_list.dart';
 void main() {
   group('MovieManagerList', () {
     testWidgets('displays movie list', (tester) async {
-      final manager = MovieManager(MovieApi(), LocalMovieStorage());
+      final manager = MovieManager(MovieApi(), InMemoryMovieStorage());
       manager.addMovies([
         MovieData(
             'Movie 1',
@@ -34,7 +34,7 @@ void main() {
     });
 
     testWidgets('updates when new movies are added', (tester) async {
-      final manager = MovieManager(MovieApi(), LocalMovieStorage());
+      final manager = MovieManager(MovieApi(), InMemoryMovieStorage());
       manager.addMovies([
         MovieData(
             'Movie 1',

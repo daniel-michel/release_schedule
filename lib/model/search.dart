@@ -4,6 +4,9 @@ class Scored<T> {
   T data;
   double score;
   Scored(this.data, this.score);
+
+  @override
+  toString() => '$data: $score';
 }
 
 List<T> searchList<T>(

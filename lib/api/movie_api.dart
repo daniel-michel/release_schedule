@@ -6,6 +6,4 @@ class MovieApi {
       [];
 
   Future<List<MovieData>> searchForMovies(String searchTerm) async => [];
-
-  Future<void> addMovieDetails(List<MovieData> movies) async {}
 }

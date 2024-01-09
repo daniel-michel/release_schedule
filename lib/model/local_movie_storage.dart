@@ -1,18 +1,25 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:release_schedule/model/movie.dart';
 
-class LocalMovieStorage {
+abstract class LocalMovieStorage {
+  void update(List<MovieData> movies);
+  Future<List<MovieData>> retrieve();
+}
+
+class InMemoryMovieStorage implements LocalMovieStorage {
   List<MovieData> _storedMovies = [];
+  @override
   update(List<MovieData> movies) {
     _storedMovies = movies;
   }
 
+  @override
   Future<List<MovieData>> retrieve() async {
     return _storedMovies;
   }
 }
 
-class LocalMovieStorageGetStorage extends LocalMovieStorage {
+class LocalMovieStorageGetStorage implements LocalMovieStorage {
   Future<void>? initialized;
   GetStorage? container;
   MovieData Function(Map jsonEncodable) toMovieData;

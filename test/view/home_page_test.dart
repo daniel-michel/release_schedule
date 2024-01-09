@@ -9,14 +9,16 @@ import 'package:release_schedule/view/movie_manager_list.dart';
 void main() {
   group('HomePage', () {
     testWidgets('displays title', (WidgetTester tester) async {
-      MovieManager movieManager = MovieManager(MovieApi(), LocalMovieStorage());
+      MovieManager movieManager =
+          MovieManager(MovieApi(), InMemoryMovieStorage());
       await tester.pumpWidget(MaterialApp(home: HomePage(movieManager)));
 
       expect(find.text('Search'), findsOneWidget);
     });
 
     testWidgets('displays list of releases', (WidgetTester tester) async {
-      MovieManager movieManager = MovieManager(MovieApi(), LocalMovieStorage());
+      MovieManager movieManager =
+          MovieManager(MovieApi(), InMemoryMovieStorage());
       await tester.pumpWidget(MaterialApp(home: HomePage(movieManager)));
 
       expect(find.byType(MovieManagerList), findsOneWidget);

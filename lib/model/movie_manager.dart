@@ -45,7 +45,7 @@ class MovieManager extends ChangeNotifier {
     bool added = false;
     for (var movie in additionalMovies) {
       MovieData? existing =
-          firstWhereOrNull(movies, (element) => movie.same(element));
+          movies.where((element) => movie.same(element)).firstOrNull;
       if (existing == null) {
         _insertMovie(movie);
         movie.addListener(() {
@@ -131,10 +131,6 @@ class MovieManager extends ChangeNotifier {
     return addMovies(movies);
   }
 
-  void expandDetails(List<MovieData> movies) {
-    api.addMovieDetails(movies);
-  }
-
   Future<void> loadUpcomingMovies() async {
     try {
       loading = true;
@@ -146,13 +142,5 @@ class MovieManager extends ChangeNotifier {
       loading = false;
       notifyListeners();
     }
-  }
-}
-
-T? firstWhereOrNull<T>(List<T> list, bool Function(T element) test) {
-  try {
-    return list.firstWhere(test);
-  } catch (e) {
-    return null;
   }
 }

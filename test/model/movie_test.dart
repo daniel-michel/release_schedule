@@ -21,8 +21,6 @@ void main() {
         'Adventure'
       ], titles: [
         (title: 'Title 2', language: 'en')
-      ], reviews: [
-        Review('8.5', 'John Doe', DateTime(2023, 1, 1), 100)
       ]);
       movie1.updateWithNewIgnoringUserControlled(movie2);
       expect(movie1.title, equals('Title 2'));
@@ -35,10 +33,6 @@ void main() {
       expect(movie1.titles!.length, equals(1));
       expect(movie1.titles![0].title, equals('Title 2'));
       expect(movie1.titles![0].language, equals('en'));
-      expect(movie1.reviews!.length, equals(1));
-      expect(movie1.reviews![0].score, equals('8.5'));
-      expect(movie1.reviews![0].by, equals('John Doe'));
-      expect(movie1.reviews![0].count, equals(100));
     });
 
     test('same() returns true for same title and release date', () {
@@ -89,8 +83,6 @@ void main() {
         'Adventure'
       ], titles: [
         (title: 'Title 2', language: 'en')
-      ], reviews: [
-        Review('8.5', 'John Doe', DateTime(2023, 1, 1), 100)
       ]);
       final json = movie.toJsonEncodable();
       final movie2 = MovieData.fromJsonEncodable(json);
@@ -104,10 +96,6 @@ void main() {
       expect(movie2.titles!.length, equals(1));
       expect(movie2.titles![0].title, equals('Title 2'));
       expect(movie2.titles![0].language, equals('en'));
-      expect(movie2.reviews!.length, equals(1));
-      expect(movie2.reviews![0].score, equals('8.5'));
-      expect(movie2.reviews![0].by, equals('John Doe'));
-      expect(movie2.reviews![0].count, equals(100));
     });
 
     test('toString()', () {
@@ -123,8 +111,6 @@ void main() {
         'Adventure'
       ], titles: [
         (title: 'Title 2', language: 'en')
-      ], reviews: [
-        Review('8.5', 'John Doe', DateTime(2023, 1, 1), 100)
       ]);
       expect(movie.toString(),
           equals('Title 1 (January 1, 2023 (US); Action, Adventure)'));

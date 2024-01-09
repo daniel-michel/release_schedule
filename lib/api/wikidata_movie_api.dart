@@ -42,12 +42,6 @@ class WikidataMovieApi implements MovieApi {
       ApiManager("https://query.wikidata.org/sparql?format=json&origin=*");
 
   @override
-  Future<void> addMovieDetails(List<MovieData> movies) {
-    // TODO: implement addMovieDetails
-    throw UnimplementedError();
-  }
-
-  @override
   Future<List<WikidataMovieData>> getUpcomingMovies(DateTime startDate,
       [int count = 100]) async {
     Response filmResponse = await queryApi.get(

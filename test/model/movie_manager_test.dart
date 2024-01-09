@@ -12,7 +12,7 @@ void main() {
     setUp(() {
       movieManager = MovieManager(
         MovieApi(),
-        LocalMovieStorage(),
+        InMemoryMovieStorage(),
       );
     });
 
@@ -64,7 +64,38 @@ void main() {
       expect(movieManager.movies, equals([...movies, ...newMovies]));
     });
 
-    test("addMovies should sort movies by their release dates", () {
+    test('addMovies should update existing movies', () {
+      final movies = [
+        MovieData(
+          'The Matrix',
+          DateWithPrecisionAndCountry(DateTime(1999, 3, 31), DatePrecision.day,
+              'United States of America'),
+        ),
+        MovieData(
+          'The Matrix Reloaded',
+          DateWithPrecisionAndCountry(DateTime(2003, 5, 7), DatePrecision.day,
+              'United States of America'),
+        ),
+      ];
+
+      movieManager.addMovies(movies);
+
+      final updatedMovie = MovieData(
+        'The Matrix Reloaded',
+        DateWithPrecisionAndCountry(DateTime(2003, 5, 7), DatePrecision.day,
+            'United States of America'),
+      )..setDetails(
+          bookmarked: true,
+          genres: ['Action', 'Adventure'],
+        );
+
+      movieManager.addMovies([updatedMovie]);
+
+      expect(movieManager.movies[1].genres, equals(updatedMovie.genres));
+      expect(movieManager.movies[1].bookmarked, equals(false));
+    });
+
+    test('addMovies should sort movies by their release dates', () {
       final movies = [
         MovieData(
           'The Matrix Reloaded',
@@ -74,6 +105,27 @@ void main() {
         MovieData(
           'The Matrix',
           DateWithPrecisionAndCountry(DateTime(1999, 3, 31), DatePrecision.day,
+              'United States of America'),
+        ),
+      ];
+
+      movieManager.addMovies(movies);
+
+      expect(movieManager.movies, equals([...movies.reversed]));
+    });
+
+    test(
+        'addMovies should sort movies that have a less precise release date before movies with more precise release dates',
+        () {
+      final movies = [
+        MovieData(
+          'The Matrix Reloaded',
+          DateWithPrecisionAndCountry(DateTime(2003, 5, 7), DatePrecision.day,
+              'United States of America'),
+        ),
+        MovieData(
+          'The Matrix',
+          DateWithPrecisionAndCountry(DateTime(2003, 5, 7), DatePrecision.month,
               'United States of America'),
         ),
       ];
@@ -135,6 +187,29 @@ void main() {
       movieManager.removeMoviesWhere((movie) => movie.title.contains('Matrix'));
 
       expect(movieManager.movies, equals([notRemoved]));
+    });
+
+    test("localSearch", () {
+      final movies = [
+        MovieData(
+          'The Matrix',
+          DateWithPrecisionAndCountry(DateTime(1999, 3, 31), DatePrecision.day,
+              'United States of America'),
+        ),
+        MovieData(
+          'The Matrix Reloaded',
+          DateWithPrecisionAndCountry(DateTime(2003, 5, 7), DatePrecision.day,
+              'United States of America'),
+        ),
+      ];
+
+      movieManager.addMovies(movies);
+
+      expect(movieManager.localSearch('Matrix'), equals(movies));
+      expect(movieManager.localSearch('Matrix Re'),
+          equals(movies.reversed.toList()));
+      expect(movieManager.localSearch('Matrix Reloaded'), equals([movies[1]]));
+      expect(movieManager.localSearch('Matrix Revolutions'), equals([]));
     });
   });
 }

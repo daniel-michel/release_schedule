@@ -10,7 +10,6 @@ class MovieData extends ChangeNotifier {
   List<DateWithPrecisionAndCountry>? _releaseDates;
   List<String>? _genres;
   List<TitleInLanguage>? _titles;
-  List<Review>? _reviews;
 
   MovieData(this._title, this._releaseDate);
 
@@ -38,10 +37,6 @@ class MovieData extends ChangeNotifier {
     return _titles;
   }
 
-  List<Review>? get reviews {
-    return _reviews;
-  }
-
   bool get hasDetails {
     return _hasDetails;
   }
@@ -54,8 +49,7 @@ class MovieData extends ChangeNotifier {
         releaseDate: movie.releaseDate,
         releaseDates: movie.releaseDates,
         genres: movie.genres,
-        titles: movie.titles,
-        reviews: movie.reviews);
+        titles: movie.titles);
   }
 
   void setDetails(
@@ -64,8 +58,7 @@ class MovieData extends ChangeNotifier {
       bool? bookmarked,
       List<DateWithPrecisionAndCountry>? releaseDates,
       List<String>? genres,
-      List<TitleInLanguage>? titles,
-      List<Review>? reviews}) {
+      List<TitleInLanguage>? titles}) {
     if (title != null) {
       _title = title;
     }
@@ -84,16 +77,13 @@ class MovieData extends ChangeNotifier {
     if (titles != null) {
       _titles = titles;
     }
-    if (reviews != null) {
-      _reviews = reviews;
-    }
     _hasDetails = true;
     notifyListeners();
   }
 
   @override
   String toString() {
-    return "$title (${_releaseDate.toString()}${_genres?.isNotEmpty ?? true ? "; ${_genres?.join(", ")}" : ""})";
+    return "$title (${_releaseDate.toString()}${_genres?.isNotEmpty ?? false ? "; ${_genres?.join(", ")}" : ""})";
   }
 
   bool same(MovieData other) {
@@ -112,7 +102,6 @@ class MovieData extends ChangeNotifier {
       "releaseDates": releaseDatesByCountry,
       "genres": genres,
       "titles": titlesByCountry,
-      "reviews": reviews?.map((review) => review.toJsonEncodable()).toList(),
     };
   }
 
@@ -129,11 +118,6 @@ class MovieData extends ChangeNotifier {
             ? (json["releaseDates"] as List<dynamic>)
                 .map((release) =>
                     DateWithPrecisionAndCountry.fromJsonEncodable(release))
-                .toList()
-            : null,
-        reviews: json["reviews"] != null
-            ? (json["reviews"] as List<dynamic>)
-                .map((review) => Review.fromJsonEncodable(review))
                 .toList()
             : null,
         titles: json["titles"] != null
@@ -166,28 +150,5 @@ class DateWithPrecisionAndCountry {
   @override
   String toString() {
     return "${dateWithPrecision.toString()} ($country)";
-  }
-}
-
-class Review {
-  String score;
-  String by;
-  DateTime asOf;
-  int count;
-
-  Review(this.score, this.by, this.asOf, this.count);
-  Review.fromJsonEncodable(Map json)
-      : score = json["score"],
-        by = json["by"],
-        asOf = DateTime.parse(json["asOf"]),
-        count = json["count"];
-
-  Map toJsonEncodable() {
-    return {
-      "score": score,
-      "by": by,
-      "asOf": asOf.toIso8601String(),
-      "count": count,
-    };
   }
 }
