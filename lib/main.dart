@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:release_schedule/api/wikidata_movie_api.dart';
 import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/live_search.dart';
+import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_item.dart';
 import 'package:release_schedule/view/movie_manager_list.dart';
@@ -30,7 +32,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
-      home: HomePage(movieManager),
+      home: HomePage(
+        MovieManager(WikidataMovieApi(),
+            LocalMovieStorageGetStorage(WikidataMovieData.fromEncodable)),
+      ),
     );
   }
 }

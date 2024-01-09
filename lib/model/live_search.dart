@@ -42,8 +42,7 @@ class LiveSearch extends ChangeNotifier {
     searchingOnline = true;
     try {
       String startedSearching = searchTerm;
-      List<MovieData> onlineResults =
-          await movieManager.onlineSearch(searchTerm);
+      List<MovieData> onlineResults = await manager.onlineSearch(searchTerm);
       searchingOnline = false;
       // if the search term has changed since we started searching, ignore the results
       if (startedSearching != searchTerm) {

@@ -2,14 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:release_schedule/api/movie_api.dart';
-import 'package:release_schedule/api/wikidata_movie_api.dart';
 import 'package:release_schedule/model/delayed_function_caller.dart';
 import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/model/search.dart';
-
-final movieManager = MovieManager(WikidataMovieApi(),
-    LocalMovieStorageGetStorage(WikidataMovieData.fromEncodable));
 
 class MovieManager extends ChangeNotifier {
   final List<MovieData> movies = List.empty(growable: true);

@@ -150,7 +150,8 @@ class GroupedList<GroupType> extends StatelessWidget {
     List<({int index, GroupType group})> newGroupStarts = [
       (index: 0, group: groupBy(0))
     ];
-    int internalInitialScrollIndex = initialScrollIndex + 1;
+    int internalInitialScrollIndex =
+        initialScrollIndex + (initialScrollIndex > 0 ? 1 : 0);
     GroupType last = newGroupStarts[0].group;
     for (int i = 1; i < itemCount; i++) {
       final GroupType current = groupBy(i);
