@@ -6,12 +6,18 @@ You can try out the live web version at [daniel-michel.github.io/release_schedul
 
 Android, Linux and Web builds can be found in the latest [CI run](https://github.com/daniel-michel/release_schedule/actions/workflows/ci.yml).
 
-Currently, only a simple list of upcoming movies is shown:
+## Overview
 
-![](screenshots/movie_list.png)
+There are two screens that show upcoming movies and bookmarked movies:
 
-The floating button at the bottom right can be used to load the upcoming movies and the button at the top right to clear the movies that where already loaded.
+<img src="screenshots/upcoming.png" width="300">
+<img src="screenshots/bookmarks.png" width="300">
 
+The floating button at the bottom right of the upcoming movies list can be used to load new upcoming movies. The menu at the top right can be used to clear some or all of the cached movies.
+
+The movies that are cached as well as other movies can be searched with the search field at the top:
+
+<img src="screenshots/search.png" width="300">
 
 ## Wikidata API
 
@@ -20,6 +26,7 @@ The Implementation can be found at [./lib/api/wikidata_movie_api.dart](./lib/api
 To get information about the upcoming movies multiple APIs are used.
 
 First the SPARQL API is used to retrieve upcoming movies using the endpoint "https://query.wikidata.org/sparql" with the following query:
+
 ```sql
 SELECT
   ?movie
@@ -35,6 +42,7 @@ GROUP BY ?movie
 ORDER BY ?minReleaseDate
 LIMIT $limit
 ```
+
 Where `$limit` is the maximum number of movies that are retrieved and `$date` the starting date from which movies are retrieved.
 `$limit` is currently set to 100 and `$date` one week before the current one.
 However, because there are multiple publication dates for most movies, the retrieved movies just need to have one publication date that is on or after `$date` for the movie to be included in the result. The `minReleaseDate` is not necessarily the release date displayed in the app, therefore some movies in the app might show up as having been released a long time ago.
