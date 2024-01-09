@@ -7,13 +7,11 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 class MovieList extends StatelessWidget {
   final List<MovieData> movies;
   final bool Function(MovieData)? filter;
-  MovieList(List<MovieData> movies, {this.filter, super.key})
-      : movies = movies.toList(),
-        super();
+  const MovieList(this.movies, {this.filter, super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (movies.isEmpty) {
+    Widget noMovies() {
       return Center(
         child: IntrinsicHeight(
           child: Column(
@@ -23,7 +21,7 @@ class MovieList extends StatelessWidget {
                 size: 100,
               ),
               Text(
-                "No movies available",
+                "No Movies",
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
             ],
@@ -31,6 +29,11 @@ class MovieList extends StatelessWidget {
         ),
       );
     }
+
+    if (movies.isEmpty) {
+      return noMovies();
+    }
+
     Widget buildGroupSeparator(BuildContext context, DateWithPrecision date) {
       bool highlight = date.includes(DateTime.now());
       return SizedBox(
@@ -38,7 +41,7 @@ class MovieList extends StatelessWidget {
         child: Align(
           alignment: Alignment.center,
           child: Card(
-            elevation: 5,
+            elevation: 3,
             color: highlight
                 ? Theme.of(context).colorScheme.primaryContainer
                 : null,
@@ -65,6 +68,9 @@ class MovieList extends StatelessWidget {
           indexMap.add(index);
         }
         index++;
+      }
+      if (indexMap.isEmpty) {
+        return noMovies();
       }
       int firstMovieTodayOrAfterIndex = () {
         DateWithPrecision today = DateWithPrecision.today();
@@ -93,6 +99,7 @@ class MovieList extends StatelessWidget {
         initialScrollIndex: firstMovieTodayOrAfterIndex,
       );
     }
+
     int firstMovieTodayOrAfterIndex = () {
       DateWithPrecision today = DateWithPrecision.today();
       int min = 0;
