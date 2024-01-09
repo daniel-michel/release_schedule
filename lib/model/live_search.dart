@@ -9,12 +9,13 @@ class LiveSearch extends ChangeNotifier {
   Duration minTimeBetweenRequests = const Duration(milliseconds: 200);
   late final DelayedFunctionCaller _searchCaller;
   final MovieManager manager;
-  bool loading = false;
   bool searchingOnline = false;
 
   LiveSearch(this.manager) {
     _searchCaller = DelayedFunctionCaller(searchOnline, minTimeBetweenRequests);
   }
+
+  get loading => searchingOnline || _searchCaller.scheduled;
 
   void updateSearch(String search) {
     searchTerm = search;
@@ -22,19 +23,15 @@ class LiveSearch extends ChangeNotifier {
       return;
     }
     searchResults = manager.localSearch(search);
-    loading = true;
     _searchCaller.call();
     notifyListeners();
   }
 
   void searchOnline() async {
     if (searchTerm.isEmpty) {
-      loading = false;
-      notifyListeners();
       return;
     }
     if (searchingOnline) {
-      loading = true;
       _searchCaller.call();
       notifyListeners();
       return;
@@ -55,7 +52,6 @@ class LiveSearch extends ChangeNotifier {
       notifyListeners();
     } finally {
       searchingOnline = false;
-      loading = false;
       notifyListeners();
     }
   }

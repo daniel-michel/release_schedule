@@ -41,6 +41,7 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late LiveSearch liveSearch;
+  late TextEditingController _searchController;
 
   @override
   void initState() {
@@ -49,12 +50,14 @@ class _HomePageState extends State<HomePage>
       vsync: this, // the SingleTickerProviderStateMixin
       duration: const Duration(milliseconds: 300),
     );
+    _searchController = TextEditingController();
     liveSearch = LiveSearch(widget.manager);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -62,21 +65,42 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
-          decoration: const InputDecoration(
-            hintText: "Search",
-            border: InputBorder.none,
-          ),
-          onChanged: (value) {
-            setState(() {
-              if (value.isEmpty) {
-                _controller.reverse();
-              } else {
-                _controller.forward();
-              }
-              liveSearch.updateSearch(value);
-            });
-          },
+        title: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: "Search",
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    if (value.isEmpty) {
+                      _controller.reverse();
+                    } else {
+                      _controller.forward();
+                    }
+                    liveSearch.updateSearch(value);
+                  });
+                },
+              ),
+            ),
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                if (liveSearch.searchTerm.isEmpty) return Container();
+                return IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    liveSearch.updateSearch("");
+                    _controller.reverse();
+                  },
+                );
+              },
+            ),
+          ],
         ),
         actions: [HamburgerMenu(widget.manager)],
       ),

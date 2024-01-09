@@ -7,6 +7,8 @@ class DelayedFunctionCaller {
 
   DelayedFunctionCaller(this.function, this.duration);
 
+  get scheduled => _timer != null && _timer!.isActive;
+
   void call() {
     // If a timer is already active, return.
     if (_timer != null && _timer!.isActive) {
