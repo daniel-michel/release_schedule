@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/movie.dart';
 
 void main() {

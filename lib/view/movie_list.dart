@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/view/movie_item.dart';
 import 'package:sticky_grouped_list/sticky_grouped_list.dart';
@@ -10,6 +11,24 @@ class MovieList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (movies.isEmpty) {
+      return Center(
+        child: IntrinsicHeight(
+          child: Column(
+            children: [
+              const Icon(
+                Icons.close,
+                size: 100,
+              ),
+              Text(
+                "No movies available",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     Widget buildGroupSeparator(BuildContext context, DateWithPrecision date) {
       bool highlight = date.includes(DateTime.now());
       return SizedBox(
@@ -45,6 +64,22 @@ class MovieList extends StatelessWidget {
         }
         index++;
       }
+      int firstMovieTodayOrAfterIndex = () {
+        DateWithPrecision today = DateWithPrecision.today();
+        int min = 0;
+        int max = indexMap.length;
+        while (min < max) {
+          int center = (min + max) ~/ 2;
+          DateWithPrecision date =
+              movies[indexMap[center]].releaseDate.dateWithPrecision;
+          if (date.compareTo(today) < 0) {
+            min = center + 1;
+          } else {
+            max = center;
+          }
+        }
+        return max;
+      }();
       return StickyGroupedListView<int, DateWithPrecision>(
         elements: indexMap,
         floatingHeader: true,
@@ -54,8 +89,24 @@ class MovieList extends StatelessWidget {
         itemBuilder: (context, index) {
           return MovieItem(movies[index]);
         },
+        initialScrollIndex: firstMovieTodayOrAfterIndex,
       );
     }
+    int firstMovieTodayOrAfterIndex = () {
+      DateWithPrecision today = DateWithPrecision.today();
+      int min = 0;
+      int max = movies.length;
+      while (min < max) {
+        int center = (min + max) ~/ 2;
+        DateWithPrecision date = movies[center].releaseDate.dateWithPrecision;
+        if (date.compareTo(today) < 0) {
+          min = center + 1;
+        } else {
+          max = center;
+        }
+      }
+      return max;
+    }();
     return StickyGroupedListView<MovieData, DateWithPrecision>(
       elements: movies,
       floatingHeader: true,
@@ -65,6 +116,7 @@ class MovieList extends StatelessWidget {
       itemBuilder: (context, movie) {
         return MovieItem(movie);
       },
+      initialScrollIndex: firstMovieTodayOrAfterIndex,
     );
   }
 }

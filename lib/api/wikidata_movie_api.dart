@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:release_schedule/api/api_manager.dart';
 import 'package:release_schedule/api/json_helper.dart';
 import 'package:release_schedule/api/movie_api.dart';
+import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/movie.dart';
 
 class WikidataProperties {

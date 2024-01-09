@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:release_schedule/api/movie_api.dart';
+import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/model/movie_manager.dart';

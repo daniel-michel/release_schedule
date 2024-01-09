@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/live_search.dart';
-import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_item.dart';
 import 'package:release_schedule/view/movie_manager_list.dart';
@@ -65,6 +65,7 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 1,
         title: Row(
           children: [
             Expanded(
@@ -159,6 +160,12 @@ class OverviewPage extends StatelessWidget {
       length: 2,
       child: Column(
         children: [
+          const TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.list), child: Text("Upcoming")),
+              Tab(icon: Icon(Icons.bookmark), child: Text("Bookmarked")),
+            ],
+          ),
           Expanded(
             child: TabBarView(
               children: [
@@ -195,10 +202,6 @@ class OverviewPage extends StatelessWidget {
               ],
             ),
           ),
-          const TabBar(tabs: [
-            Tab(icon: Icon(Icons.list), child: Text("Upcoming")),
-            Tab(icon: Icon(Icons.bookmark), child: Text("Bookmarked")),
-          ]),
         ],
       ),
     );
