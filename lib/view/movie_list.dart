@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/movie.dart';
 import 'package:release_schedule/view/movie_item.dart';
-import 'package:sticky_grouped_list/sticky_grouped_list.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class MovieList extends StatelessWidget {
   final List<MovieData> movies;
   final bool Function(MovieData)? filter;
-  const MovieList(this.movies, {this.filter, super.key});
+  MovieList(List<MovieData> movies, {this.filter, super.key})
+      : movies = movies.toList(),
+        super();
 
   @override
   Widget build(BuildContext context) {
@@ -80,14 +82,13 @@ class MovieList extends StatelessWidget {
         }
         return max;
       }();
-      return StickyGroupedListView<int, DateWithPrecision>(
-        elements: indexMap,
-        floatingHeader: true,
-        groupBy: (index) => movies[index].releaseDate.dateWithPrecision,
-        groupSeparatorBuilder: (index) => buildGroupSeparator(
-            context, movies[index].releaseDate.dateWithPrecision),
+      return GroupedList<DateWithPrecision>(
+        itemCount: indexMap.length,
+        groupBy: (index) =>
+            movies[indexMap[index]].releaseDate.dateWithPrecision,
+        groupSeparatorBuilder: (date) => buildGroupSeparator(context, date),
         itemBuilder: (context, index) {
-          return MovieItem(movies[index]);
+          return MovieItem(movies[indexMap[index]]);
         },
         initialScrollIndex: firstMovieTodayOrAfterIndex,
       );
@@ -107,16 +108,71 @@ class MovieList extends StatelessWidget {
       }
       return max;
     }();
-    return StickyGroupedListView<MovieData, DateWithPrecision>(
-      elements: movies,
-      floatingHeader: true,
-      groupBy: (movie) => movie.releaseDate.dateWithPrecision,
-      groupSeparatorBuilder: (movie) =>
-          buildGroupSeparator(context, movie.releaseDate.dateWithPrecision),
-      itemBuilder: (context, movie) {
-        return MovieItem(movie);
+    return GroupedList<DateWithPrecision>(
+      itemCount: movies.length,
+      groupBy: (index) => movies[index].releaseDate.dateWithPrecision,
+      groupSeparatorBuilder: (date) => buildGroupSeparator(context, date),
+      itemBuilder: (context, index) {
+        return MovieItem(movies[index]);
       },
       initialScrollIndex: firstMovieTodayOrAfterIndex,
+    );
+  }
+}
+
+class GroupedList<GroupType> extends StatelessWidget {
+  final int itemCount;
+  final int initialScrollIndex;
+  final Widget Function(BuildContext, int) itemBuilder;
+  final Widget Function(GroupType) groupSeparatorBuilder;
+  final GroupType Function(int) groupBy;
+
+  const GroupedList(
+      {required this.itemCount,
+      required this.itemBuilder,
+      required this.groupSeparatorBuilder,
+      required this.groupBy,
+      this.initialScrollIndex = 0,
+      super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (itemCount == 0) {
+      return Container();
+    }
+    List<({int index, GroupType group})> newGroupStarts = [
+      (index: 0, group: groupBy(0))
+    ];
+    int internalInitialScrollIndex = initialScrollIndex + 1;
+    GroupType last = newGroupStarts[0].group;
+    for (int i = 1; i < itemCount; i++) {
+      final GroupType current = groupBy(i);
+      if (current != last) {
+        newGroupStarts.add((index: i, group: current));
+        if (initialScrollIndex > i) {
+          internalInitialScrollIndex++;
+        }
+      }
+      last = current;
+    }
+
+    Widget itemAndSeparatorBuilder(BuildContext context, int index) {
+      int itemIndex = index;
+      for (int i = 0; i < newGroupStarts.length; i++) {
+        if (newGroupStarts[i].index > itemIndex) {
+          break;
+        } else if (newGroupStarts[i].index == itemIndex) {
+          return groupSeparatorBuilder(groupBy(itemIndex));
+        }
+        itemIndex--;
+      }
+      return itemBuilder(context, itemIndex);
+    }
+
+    return ScrollablePositionedList.builder(
+      itemCount: itemCount + newGroupStarts.length,
+      itemBuilder: itemAndSeparatorBuilder,
+      initialScrollIndex: internalInitialScrollIndex,
     );
   }
 }
