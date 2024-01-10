@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:release_schedule/api/wikidata_movie_api.dart';
+import 'package:release_schedule/api/wikidata/wikidata_movie.dart';
+import 'package:release_schedule/api/wikidata/wikidata_movie_api.dart';
 import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/live_search.dart';
 import 'package:release_schedule/model/local_movie_storage.dart';
@@ -17,6 +18,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final MovieManager manager = MovieManager(
+      WikidataMovieApi(),
+      LocalMovieStorageGetStorage(WikidataMovieData.fromEncodable),
+    );
     return MaterialApp(
       title: 'Movie Schedule',
       themeMode: ThemeMode.dark,
@@ -32,10 +37,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
-      home: HomePage(
-        MovieManager(WikidataMovieApi(),
-            LocalMovieStorageGetStorage(WikidataMovieData.fromEncodable)),
-      ),
+      home: HomePage(manager),
     );
   }
 }
@@ -187,9 +189,10 @@ class OverviewPage extends StatelessWidget {
                     // Only show movies that are bookmarked or have a release date with at least month precision and at least one title
                     filter: (movie) =>
                         movie.bookmarked ||
-                        (movie.releaseDate.dateWithPrecision.precision >=
+                        (movie.releaseDate != null &&
+                            movie.releaseDate!.dateWithPrecision.precision >=
                                 DatePrecision.month &&
-                            (movie.titles?.length ?? 0) >= 1),
+                            (movie.titles?.value?.length ?? 0) >= 1),
                   ),
                   floatingActionButton: FloatingActionButton(
                     child: const Icon(Icons.refresh),
@@ -234,7 +237,7 @@ class HamburgerMenu extends StatelessWidget {
             child: const Text("Remove irrelevant"),
             onTap: () => manager.removeMoviesWhere((movie) =>
                 !movie.bookmarked &&
-                !(movie.releaseDates?.any((date) =>
+                !(movie.releaseDates?.value?.any((date) =>
                         date.dateWithPrecision.precision >=
                             DatePrecision.month &&
                         date.dateWithPrecision.date.isAfter(DateTime.now()

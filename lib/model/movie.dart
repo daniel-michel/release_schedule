@@ -2,23 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:release_schedule/model/dates.dart';
 
 class MovieData extends ChangeNotifier {
-  String _title;
-  DateWithPrecisionAndCountry _releaseDate;
   bool _bookmarked = false;
 
-  bool _hasDetails = false;
-  String? _description;
-  List<DateWithPrecisionAndCountry>? _releaseDates;
-  List<String>? _genres;
-  List<TitleInLanguage>? _titles;
+  String? _title;
+  DateWithPrecisionAndCountry? _releaseDate;
 
-  MovieData(this._title, this._releaseDate);
+  // if it is entirely null the information was never loaded
+  // if only the value is null it was loaded but nothing was found
+  Dated<List<TextInLanguage>?>? _titles;
+  Dated<List<TextInLanguage>?>? _labels;
+  Dated<List<DateWithPrecisionAndCountry>?>? _releaseDates;
+  Dated<String?>? _description;
+  Dated<List<String>?>? _genres;
 
-  String get title {
+  MovieData();
+
+  String? get title {
     return _title;
   }
 
-  DateWithPrecisionAndCountry get releaseDate {
+  DateWithPrecisionAndCountry? get releaseDate {
     return _releaseDate;
   }
 
@@ -26,122 +29,188 @@ class MovieData extends ChangeNotifier {
     return _bookmarked;
   }
 
-  get description {
+  Dated<String?>? get description {
     return _description;
   }
 
-  List<DateWithPrecisionAndCountry>? get releaseDates {
+  Dated<List<DateWithPrecisionAndCountry>?>? get releaseDates {
     return _releaseDates;
   }
 
-  List<String>? get genres {
+  Dated<List<String>?>? get genres {
     return _genres;
   }
 
-  List<TitleInLanguage>? get titles {
+  Dated<List<TextInLanguage>?>? get titles {
     return _titles;
   }
 
-  bool get hasDetails {
-    return _hasDetails;
+  Dated<List<TextInLanguage>?>? get labels {
+    return _labels;
   }
 
   /// Updates the information with that of a new version of the movie
   /// but ignores fields that are user controlled, like whether the movie was bookmarked.
   void updateWithNewIgnoringUserControlled(MovieData movie) {
     setDetails(
-        title: movie.title,
-        releaseDate: movie.releaseDate,
-        description: movie.description,
-        releaseDates: movie.releaseDates,
-        genres: movie.genres,
-        titles: movie.titles);
+      titles: movie.titles,
+      labels: movie.labels,
+      releaseDates: movie.releaseDates,
+      genres: movie.genres,
+      description: movie.description,
+    );
   }
 
-  void setDetails(
-      {String? title,
-      DateWithPrecisionAndCountry? releaseDate,
-      bool? bookmarked,
-      String? description,
-      List<DateWithPrecisionAndCountry>? releaseDates,
-      List<String>? genres,
-      List<TitleInLanguage>? titles}) {
-    if (title != null) {
-      _title = title;
-    }
-    if (releaseDate != null) {
-      _releaseDate = releaseDate;
-    }
+  void setNewDetails({
+    bool? bookmarked,
+    List<TextInLanguage>? titles,
+    List<TextInLanguage>? labels,
+    List<DateWithPrecisionAndCountry>? releaseDates,
+    List<String>? genres,
+    String? description,
+  }) {
+    setDetails(
+      bookmarked: bookmarked,
+      titles: titles != null ? Dated.now(titles) : null,
+      labels: labels != null ? Dated.now(labels) : null,
+      releaseDates: releaseDates != null ? Dated.now(releaseDates) : null,
+      genres: genres != null ? Dated.now(genres) : null,
+      description: description != null ? Dated.now(description) : null,
+    );
+  }
+
+  void setDetails({
+    bool? bookmarked,
+    Dated<List<TextInLanguage>?>? titles,
+    Dated<List<TextInLanguage>?>? labels,
+    Dated<List<DateWithPrecisionAndCountry>?>? releaseDates,
+    Dated<List<String>?>? genres,
+    Dated<String?>? description,
+  }) {
     if (bookmarked != null) {
       _bookmarked = bookmarked;
+    }
+    if (titles != null) {
+      _titles = titles;
+    }
+    if (labels != null) {
+      _labels = labels;
+    }
+    if (titles != null || labels != null) {
+      _title = null;
+      _title ??= _titles?.value
+          ?.where((title) => title.language == "en")
+          .firstOrNull
+          ?.text;
+      _title ??= _labels?.value
+          ?.where((label) => label.language == "en")
+          .firstOrNull
+          ?.text;
+      _title ??= _labels?.value?.firstOrNull?.text;
+      _title ??= _titles?.value?.firstOrNull?.text;
     }
     if (description != null) {
       _description = description;
     }
     if (releaseDates != null) {
       _releaseDates = releaseDates;
+      DateWithPrecisionAndCountry? mostPrecise =
+          _releaseDates?.value?.isNotEmpty ?? false
+              ? _releaseDates?.value?.reduce((a, b) =>
+                  a.dateWithPrecision.precision > b.dateWithPrecision.precision
+                      ? a
+                      : b)
+              : null;
+      _releaseDate = mostPrecise;
     }
     if (genres != null) {
       _genres = genres;
     }
-    if (titles != null) {
-      _titles = titles;
-    }
-    _hasDetails = true;
     notifyListeners();
   }
 
   @override
   String toString() {
-    return "$title (${_releaseDate.toString()}${_genres?.isNotEmpty ?? false ? "; ${_genres?.join(", ")}" : ""})";
+    return "$title (${_releaseDate.toString()}${_genres?.value?.isNotEmpty ?? false ? "; ${_genres?.value?.join(", ")}" : ""})";
   }
 
   bool same(MovieData other) {
-    return title == other.title &&
-        releaseDate.dateWithPrecision == other.releaseDate.dateWithPrecision;
+    return title != null &&
+        title == other.title &&
+        (releaseDate == null ||
+            other.releaseDate == null ||
+            releaseDate!.dateWithPrecision.date.year ==
+                other.releaseDate!.dateWithPrecision.date.year);
   }
 
   Map toJsonEncodable() {
-    List? releaseDatesByCountry =
-        _releaseDates?.map((e) => e.toJsonEncodable()).toList();
-    List? titlesByCountry = _titles?.map((e) => [e.title, e.language]).toList();
+    dynamic releaseDatesByCountry = _releaseDates?.toJsonEncodable(
+        (releaseDates) => releaseDates
+            ?.map((releaseDate) => releaseDate.toJsonEncodable())
+            .toList());
+    dynamic titlesByCountry = _titles?.toJsonEncodable(
+        (titles) => titles?.map((e) => [e.text, e.language]).toList());
+    dynamic labels = _labels?.toJsonEncodable(
+        (labels) => labels?.map((e) => [e.text, e.language]).toList());
+    dynamic genres = _genres?.toJsonEncodable((genres) => genres);
     return {
-      "title": title,
-      "releaseDate": _releaseDate.toJsonEncodable(),
       "bookmarked": _bookmarked,
-      "description": _description,
+      "titles": titlesByCountry,
+      "labels": labels,
       "releaseDates": releaseDatesByCountry,
       "genres": genres,
-      "titles": titlesByCountry,
+      "description":
+          _description?.toJsonEncodable((description) => description),
     };
   }
 
-  MovieData.fromJsonEncodable(Map json)
-      : _title = json["title"],
-        _releaseDate =
-            DateWithPrecisionAndCountry.fromJsonEncodable(json["releaseDate"]) {
+  MovieData.fromJsonEncodable(Map json) {
     setDetails(
-        bookmarked: json["bookmarked"] as bool,
-        description: json["description"] as String?,
-        genres: (json["genres"] as List<dynamic>?)
-            ?.map((genre) => genre as String)
-            .toList(),
-        releaseDates: json["releaseDates"] != null
-            ? (json["releaseDates"] as List<dynamic>)
-                .map((release) =>
-                    DateWithPrecisionAndCountry.fromJsonEncodable(release))
-                .toList()
-            : null,
-        titles: json["titles"] != null
-            ? (json["titles"] as List<dynamic>)
-                .map((title) =>
-                    (title: title[0], language: title[1]) as TitleInLanguage)
-                .toList()
-            : null);
+      bookmarked: json["bookmarked"] as bool? ?? false,
+      titles: decodeOptionalJson<Dated<List<TextInLanguage>?>>(
+          json["titles"],
+          (json) => Dated.fromJsonEncodable(
+              json,
+              (value) => (value as List<dynamic>)
+                  .map((title) =>
+                      (text: title[0], language: title[1]) as TextInLanguage)
+                  .toList())),
+      labels: decodeOptionalJson<Dated<List<TextInLanguage>?>>(
+          json["labels"],
+          (json) => Dated.fromJsonEncodable(
+              json,
+              (value) => (value as List<dynamic>)
+                  .map((label) =>
+                      (text: label[0], language: label[1]) as TextInLanguage)
+                  .toList())),
+      genres: decodeOptionalJson<Dated<List<String>?>>(
+          json["genres"],
+          (json) =>
+              Dated.fromJsonEncodable(json, (value) => value.cast<String>())),
+      releaseDates:
+          decodeOptionalJson<Dated<List<DateWithPrecisionAndCountry>?>>(
+              json["releaseDates"],
+              (json) => Dated.fromJsonEncodable(
+                  json,
+                  (value) => (value as List<dynamic>)
+                      .map((releaseDate) =>
+                          DateWithPrecisionAndCountry.fromJsonEncodable(
+                              releaseDate))
+                      .toList())),
+      description: decodeOptionalJson<Dated<String?>>(json["description"],
+          (json) => Dated.fromJsonEncodable(json, (value) => value)),
+    );
   }
 }
 
-typedef TitleInLanguage = ({String title, String language});
+T? decodeOptionalJson<T>(dynamic json, T Function(dynamic) decode) {
+  if (json == null) {
+    return null;
+  }
+  return decode(json);
+}
+
+typedef TextInLanguage = ({String text, String language});
 
 class DateWithPrecisionAndCountry {
   final DateWithPrecision dateWithPrecision;

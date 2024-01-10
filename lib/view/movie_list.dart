@@ -78,9 +78,9 @@ class MovieList extends StatelessWidget {
         int max = indexMap.length;
         while (min < max) {
           int center = (min + max) ~/ 2;
-          DateWithPrecision date =
-              movies[indexMap[center]].releaseDate.dateWithPrecision;
-          if (date.compareTo(today) < 0) {
+          DateWithPrecision? date =
+              movies[indexMap[center]].releaseDate?.dateWithPrecision;
+          if (date != null && date.compareTo(today) < 0) {
             min = center + 1;
           } else {
             max = center;
@@ -91,7 +91,8 @@ class MovieList extends StatelessWidget {
       return GroupedList<DateWithPrecision>(
         itemCount: indexMap.length,
         groupBy: (index) =>
-            movies[indexMap[index]].releaseDate.dateWithPrecision,
+            movies[indexMap[index]].releaseDate?.dateWithPrecision ??
+            DateWithPrecision.unspecified(),
         groupSeparatorBuilder: (date) => buildGroupSeparator(context, date),
         itemBuilder: (context, index) {
           return MovieItem(movies[indexMap[index]]);
@@ -106,8 +107,8 @@ class MovieList extends StatelessWidget {
       int max = movies.length;
       while (min < max) {
         int center = (min + max) ~/ 2;
-        DateWithPrecision date = movies[center].releaseDate.dateWithPrecision;
-        if (date.compareTo(today) < 0) {
+        DateWithPrecision? date = movies[center].releaseDate?.dateWithPrecision;
+        if (date != null && date.compareTo(today) < 0) {
           min = center + 1;
         } else {
           max = center;
@@ -117,7 +118,9 @@ class MovieList extends StatelessWidget {
     }();
     return GroupedList<DateWithPrecision>(
       itemCount: movies.length,
-      groupBy: (index) => movies[index].releaseDate.dateWithPrecision,
+      groupBy: (index) =>
+          movies[index].releaseDate?.dateWithPrecision ??
+          DateWithPrecision.unspecified(),
       groupSeparatorBuilder: (date) => buildGroupSeparator(context, date),
       itemBuilder: (context, index) {
         return MovieItem(movies[index]);

@@ -11,18 +11,31 @@ import 'package:release_schedule/view/movie_manager_list.dart';
 
 void main() {
   group('MovieManagerList', () {
+    late List<MovieData> movies;
+
+    setUp(() {
+      movies = [
+        MovieData()
+          ..setNewDetails(
+            labels: [(text: 'Movie 1', language: 'en')],
+            releaseDates: [
+              DateWithPrecisionAndCountry(
+                  DateTime(2023, 1, 1), DatePrecision.day, 'US')
+            ],
+          ),
+        MovieData()
+          ..setNewDetails(
+            labels: [(text: 'Movie 2', language: 'en')],
+            releaseDates: [
+              DateWithPrecisionAndCountry(
+                  DateTime(2023, 1, 1), DatePrecision.day, 'US')
+            ],
+          )
+      ];
+    });
     testWidgets('displays movie list', (tester) async {
       final manager = MovieManager(MovieApi(), InMemoryMovieStorage());
-      manager.addMovies([
-        MovieData(
-            'Movie 1',
-            DateWithPrecisionAndCountry(
-                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
-        MovieData(
-            'Movie 2',
-            DateWithPrecisionAndCountry(
-                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
-      ]);
+      manager.addMovies(movies);
       // pump the delay until the change is written to the cache, so no timers run when the test finishes
       await tester.pump(const Duration(seconds: 5));
 
@@ -35,25 +48,20 @@ void main() {
 
     testWidgets('updates when new movies are added', (tester) async {
       final manager = MovieManager(MovieApi(), InMemoryMovieStorage());
-      manager.addMovies([
-        MovieData(
-            'Movie 1',
-            DateWithPrecisionAndCountry(
-                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
-        MovieData(
-            'Movie 2',
-            DateWithPrecisionAndCountry(
-                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
-      ]);
+      manager.addMovies(movies);
 
       await tester.pumpWidget(
           MaterialApp(home: Scaffold(body: MovieManagerList(manager))));
 
       manager.addMovies([
-        MovieData(
-            'Movie 3',
-            DateWithPrecisionAndCountry(
-                DateTime(2023, 1, 1), DatePrecision.day, 'US')),
+        MovieData()
+          ..setNewDetails(
+            labels: [(text: 'Movie 3', language: 'en')],
+            releaseDates: [
+              DateWithPrecisionAndCountry(
+                  DateTime(2023, 1, 1), DatePrecision.day, 'US')
+            ],
+          )
       ]);
       // pump the delay until the change is written to the cache, so no timers run when the test finishes
       await tester.pump(const Duration(seconds: 5));

@@ -4,114 +4,108 @@ import 'package:release_schedule/model/movie.dart';
 
 void main() {
   group('MovieData', () {
+    MovieData firstMovie = MovieData()
+      ..setNewDetails(
+        labels: [(text: 'Title 1', language: 'en')],
+        releaseDates: [
+          DateWithPrecisionAndCountry(
+              DateTime(2023, 1, 1), DatePrecision.day, 'US')
+        ],
+      );
+    MovieData secondMovie = MovieData()
+      ..setNewDetails(
+        labels: [(text: 'Title 2', language: 'en')],
+        releaseDates: [
+          DateWithPrecisionAndCountry(
+              DateTime(2023, 1, 1), DatePrecision.day, 'US')
+        ],
+      );
+
     test('updateWithNew() updates all fields', () {
-      final movie1 = MovieData(
-          'Title 1',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
-      final movie2 = MovieData(
-          'Title 2',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'UK'));
-      movie2.setDetails(releaseDates: [
-        DateWithPrecisionAndCountry(
-            DateTime(2023, 1, 1), DatePrecision.day, 'US')
-      ], genres: [
-        'Action',
-        'Adventure'
-      ], titles: [
-        (title: 'Title 2', language: 'en')
-      ]);
+      final movie1 = MovieData()
+        ..updateWithNewIgnoringUserControlled(firstMovie);
+      final movie2 = MovieData()
+        ..updateWithNewIgnoringUserControlled(secondMovie)
+        ..setNewDetails(
+          releaseDates: [
+            DateWithPrecisionAndCountry(
+                DateTime(2023, 1, 1), DatePrecision.day, 'UK')
+          ],
+          genres: ['Action', 'Adventure'],
+          titles: [(text: 'Titel 2', language: 'de')],
+        );
       movie1.updateWithNewIgnoringUserControlled(movie2);
       expect(movie1.title, equals('Title 2'));
-      expect(movie1.releaseDate.country, equals('UK'));
-      expect(movie1.releaseDates!.length, equals(1));
-      expect(movie1.releaseDates![0].country, equals('US'));
-      expect(movie1.genres!.length, equals(2));
-      expect(movie1.genres![0], equals('Action'));
-      expect(movie1.genres![1], equals('Adventure'));
-      expect(movie1.titles!.length, equals(1));
-      expect(movie1.titles![0].title, equals('Title 2'));
-      expect(movie1.titles![0].language, equals('en'));
+      expect(movie1.releaseDate?.country, equals('UK'));
+      expect(movie1.releaseDates?.value?.length, equals(1));
+      expect(movie1.releaseDates?.value?[0].country, equals('UK'));
+      expect(movie1.genres?.value?.length, equals(2));
+      expect(movie1.genres?.value?[0], equals('Action'));
+      expect(movie1.genres?.value?[1], equals('Adventure'));
+      expect(movie1.titles?.value?.length, equals(1));
+      expect(movie1.titles?.value?[0].text, equals('Titel 2'));
+      expect(movie1.titles?.value?[0].language, equals('de'));
     });
 
-    test('same() returns true for same title and release date', () {
-      final movie1 = MovieData(
-          'Title 1',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
-      final movie2 = MovieData(
-          'Title 1',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
+    test('same() returns true for same title and release year', () {
+      final movie1 = MovieData()
+        ..updateWithNewIgnoringUserControlled(firstMovie);
+      final movie2 = MovieData()
+        ..updateWithNewIgnoringUserControlled(firstMovie)
+        ..setNewDetails(
+          releaseDates: [
+            DateWithPrecisionAndCountry(
+                DateTime(2023, 4, 27), DatePrecision.day, 'US')
+          ],
+        );
       expect(movie1.same(movie2), isTrue);
     });
 
     test('same() returns false for different title', () {
-      final movie1 = MovieData(
-          'Title 1',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
-      final movie2 = MovieData(
-          'Title 2',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
+      final movie1 = MovieData()
+        ..updateWithNewIgnoringUserControlled(firstMovie);
+      final movie2 = MovieData()
+        ..updateWithNewIgnoringUserControlled(secondMovie);
       expect(movie1.same(movie2), isFalse);
     });
 
-    test('same() returns false for different release date', () {
-      final movie1 = MovieData(
-          'Title 1',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
-      final movie2 = MovieData(
-          'Title 1',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 2), DatePrecision.day, 'US'));
+    test('same() returns false for different release years', () {
+      final movie1 = MovieData()
+        ..updateWithNewIgnoringUserControlled(firstMovie);
+      final movie2 = MovieData()
+        ..updateWithNewIgnoringUserControlled(firstMovie)
+        ..setNewDetails(
+          releaseDates: [
+            DateWithPrecisionAndCountry(
+                DateTime(2022, 1, 1), DatePrecision.day, 'US')
+          ],
+        );
       expect(movie1.same(movie2), isFalse);
     });
     test('can be encoded to JSON and back', () {
-      final movie = MovieData(
-          'Title 1',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
-      movie.setDetails(releaseDates: [
-        DateWithPrecisionAndCountry(
-            DateTime(2023, 1, 1), DatePrecision.day, 'US')
-      ], genres: [
-        'Action',
-        'Adventure'
-      ], titles: [
-        (title: 'Title 2', language: 'en')
-      ]);
+      final movie = MovieData()
+        ..updateWithNewIgnoringUserControlled(firstMovie)
+        ..setNewDetails(
+          genres: ['Action', 'Adventure'],
+        );
       final json = movie.toJsonEncodable();
       final movie2 = MovieData.fromJsonEncodable(json);
       expect(movie2.title, equals('Title 1'));
-      expect(movie2.releaseDate.country, equals('US'));
-      expect(movie2.releaseDates!.length, equals(1));
-      expect(movie2.releaseDates![0].country, equals('US'));
-      expect(movie2.genres!.length, equals(2));
-      expect(movie2.genres![0], equals('Action'));
-      expect(movie2.genres![1], equals('Adventure'));
-      expect(movie2.titles!.length, equals(1));
-      expect(movie2.titles![0].title, equals('Title 2'));
-      expect(movie2.titles![0].language, equals('en'));
+      expect(movie2.releaseDate?.country, equals('US'));
+      expect(movie2.releaseDates?.value?.length, equals(1));
+      expect(movie2.releaseDates?.value?[0].country, equals('US'));
+      expect(movie2.genres?.value?.length, equals(2));
+      expect(movie2.genres?.value?[0], equals('Action'));
+      expect(movie2.genres?.value?[1], equals('Adventure'));
+      expect(movie2.titles, equals(null));
     });
 
     test('toString()', () {
-      final movie = MovieData(
-          'Title 1',
-          DateWithPrecisionAndCountry(
-              DateTime(2023, 1, 1), DatePrecision.day, 'US'));
-      movie.setDetails(releaseDates: [
-        DateWithPrecisionAndCountry(
-            DateTime(2023, 1, 1), DatePrecision.day, 'US')
-      ], genres: [
-        'Action',
-        'Adventure'
-      ], titles: [
-        (title: 'Title 2', language: 'en')
-      ]);
+      final movie = MovieData()
+        ..updateWithNewIgnoringUserControlled(firstMovie)
+        ..setNewDetails(
+          genres: ['Action', 'Adventure'],
+        );
       expect(movie.toString(),
           equals('Title 1 (January 1, 2023 (US); Action, Adventure)'));
     });

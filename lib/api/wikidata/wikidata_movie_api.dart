@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:release_schedule/api/api_manager.dart';
 import 'package:release_schedule/api/json_helper.dart';
 import 'package:release_schedule/api/movie_api.dart';
+import 'package:release_schedule/api/wikidata/wikidata_movie.dart';
 import 'package:release_schedule/model/dates.dart';
-import 'package:release_schedule/model/movie.dart';
 
 class WikidataProperties {
   static const String instanceOf = "P31";
@@ -123,91 +123,6 @@ class WikidataMovieApi implements MovieApi {
   }
 }
 
-class WikidataMovieData extends MovieData {
-  String entityId;
-  WikidataMovieData(
-      String title, DateWithPrecisionAndCountry releaseDate, this.entityId)
-      : super(title, releaseDate);
-
-  WikidataMovieData.fromEncodable(Map encodable)
-      : entityId = encodable["entityId"],
-        super.fromJsonEncodable(encodable);
-
-  @override
-  bool same(MovieData other) {
-    return other is WikidataMovieData && entityId == other.entityId;
-  }
-
-  @override
-  Map toJsonEncodable() {
-    return super.toJsonEncodable()..addAll({"entityId": entityId});
-  }
-
-  static WikidataMovieData fromWikidataEntity(
-      String entityId, Map<String, dynamic> entity) {
-    String title =
-        selectInJson<String>(entity, "labels.en.value").firstOrNull ??
-            selectInJson<String>(entity, "labels.*.value").first;
-    String? wikipediaTitle = selectInJson(entity, "sitelinks.enwiki.url")
-        .firstOrNull
-        ?.split("/")
-        .last;
-    String? description = wikipediaTitle != null
-        ? _getCachedWikipediaExplainTextFotTitle(wikipediaTitle)
-        : null;
-    Map<String, dynamic> claims = entity["claims"];
-    List<TitleInLanguage>? titles = selectInJson(
-            claims, "${WikidataProperties.title}.*.mainsnak.datavalue.value")
-        .map((value) => (
-              title: value["text"],
-              language: value["language"],
-            ) as TitleInLanguage)
-        .toList();
-    List<DateWithPrecisionAndCountry> releaseDates =
-        _getReleaseDates(claims).toList();
-    // Sort release dates with higher precision to the beginning
-    releaseDates.sort((a, b) => -a.dateWithPrecision.precision.index
-        .compareTo(b.dateWithPrecision.precision.index));
-    List<String>? genres = selectInJson<String>(
-            claims, "${WikidataProperties.genre}.*.mainsnak.datavalue.value.id")
-        .map(_getCachedLabelForEntity)
-        .toList();
-    WikidataMovieData movie = WikidataMovieData(
-        title,
-        releaseDates.isNotEmpty
-            ? releaseDates[0]
-            : DateWithPrecisionAndCountry(
-                DateTime.now(), DatePrecision.decade, "unknown location"),
-        entityId);
-    movie.setDetails(
-      description: description,
-      titles: titles,
-      releaseDates: releaseDates,
-      genres: genres,
-    );
-    return movie;
-  }
-
-  static Iterable<DateWithPrecisionAndCountry> _getReleaseDates(
-      Map<String, dynamic> claims) {
-    return selectInJson(claims, "${WikidataProperties.publicationDate}.*")
-        .where((dateClaim) => dateClaim["rank"] != "deprecated")
-        .expand<DateWithPrecisionAndCountry>((dateClaim) {
-      var value = selectInJson(dateClaim, "mainsnak.datavalue.value").first;
-      Iterable<String> countries = (selectInJson<String>(dateClaim,
-              "qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id"))
-          .map(_getCachedLabelForEntity);
-      if (countries.isEmpty) {
-        countries = ["unknown location"];
-      }
-      return countries.map((country) => DateWithPrecisionAndCountry(
-          DateTime.parse(value["time"]),
-          _precisionFromWikidata(value["precision"]),
-          country));
-    });
-  }
-}
-
 String _createUpcomingMovieQuery(
     DateTime startDate, String instanceOf, int limit) {
   String date = DateFormat("yyyy-MM-dd").format(startDate);
@@ -227,7 +142,7 @@ ORDER BY ?minReleaseDate
 LIMIT $limit""";
 }
 
-DatePrecision _precisionFromWikidata(int precision) {
+DatePrecision precisionFromWikidata(int precision) {
   return switch (precision) {
     >= 13 => DatePrecision.minute,
     12 => DatePrecision.hour,
@@ -278,20 +193,21 @@ Future<Map<String, String>> _getLabelsForEntities(
   return labels;
 }
 
-String _getCachedLabelForEntity(String entityId) {
+String getCachedLabelForEntity(String entityId) {
   return _labelCache[entityId] ?? entityId;
 }
 
 ApiManager _wikipediaApi =
     ApiManager("https://en.wikipedia.org/w/api.php?format=json&origin=*");
-Map<String, String> _wikipediaExplainTextCache = {};
-Future<Map<String, String>> _getWikipediaExplainTextForTitles(
+Map<String, Dated<String?>> _wikipediaExplainTextCache = {};
+
+Future<Map<String, Dated<String?>>> _getWikipediaExplainTextForTitles(
     List<String> pageTitles) async {
   const batchSize = 50;
-  Map<String, String> explainTexts = {};
+  Map<String, Dated<String?>> explainTexts = {};
   for (int i = pageTitles.length - 1; i >= 0; i--) {
-    if (_labelCache.containsKey(pageTitles[i])) {
-      explainTexts[pageTitles[i]] = _labelCache[pageTitles[i]]!;
+    if (_wikipediaExplainTextCache.containsKey(pageTitles[i])) {
+      explainTexts[pageTitles[i]] = _wikipediaExplainTextCache[pageTitles[i]]!;
       pageTitles.removeAt(i);
     }
   }
@@ -312,13 +228,13 @@ Future<Map<String, String>> _getWikipediaExplainTextForTitles(
       String? explainText = batchPages[pageId]["extract"];
       if (explainText != null) {
         _wikipediaExplainTextCache[originalTitle] =
-            explainTexts[originalTitle] = explainText;
+            explainTexts[originalTitle] = Dated.now(explainText);
       }
     }
   }
   return explainTexts;
 }
 
-String? _getCachedWikipediaExplainTextFotTitle(String title) {
+Dated<String?>? getCachedWikipediaExplainTextFotTitle(String title) {
   return _wikipediaExplainTextCache[title];
 }

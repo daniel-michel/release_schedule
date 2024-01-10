@@ -15,21 +15,30 @@ void main() {
     setUp(() {
       storage = InMemoryMovieStorage();
       storage.update([
-        MovieData(
-          'The Shawshank Redemption',
-          DateWithPrecisionAndCountry(
-              DateTime(1994, 9, 22), DatePrecision.day, 'US'),
-        ),
-        MovieData(
-          'The Godfather',
-          DateWithPrecisionAndCountry(
-              DateTime(1972, 3, 24), DatePrecision.day, 'US'),
-        ),
-        MovieData(
-          'The Dark Knight',
-          DateWithPrecisionAndCountry(
-              DateTime(2008, 7, 18), DatePrecision.day, 'US'),
-        ),
+        MovieData()
+          ..setNewDetails(
+            labels: [(text: 'The Shawshank Redemption', language: 'en')],
+            releaseDates: [
+              DateWithPrecisionAndCountry(
+                  DateTime(1994, 9, 22), DatePrecision.day, 'US')
+            ],
+          ),
+        MovieData()
+          ..setNewDetails(
+            labels: [(text: 'The Godfather', language: 'en')],
+            releaseDates: [
+              DateWithPrecisionAndCountry(
+                  DateTime(1972, 3, 24), DatePrecision.day, 'US')
+            ],
+          ),
+        MovieData()
+          ..setNewDetails(
+            labels: [(text: 'The Dark Knight', language: 'en')],
+            releaseDates: [
+              DateWithPrecisionAndCountry(
+                  DateTime(2008, 7, 18), DatePrecision.day, 'US')
+            ],
+          ),
       ]);
     });
 

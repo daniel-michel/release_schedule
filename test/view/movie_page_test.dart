@@ -6,13 +6,20 @@ import 'package:release_schedule/view/movie_page.dart';
 
 void main() {
   group('MoviePage', () {
-    testWidgets('should render the movie details', (WidgetTester tester) async {
-      final movie = MovieData(
-        'The Shawshank Redemption',
-        DateWithPrecisionAndCountry(
-            DateTime(1994, 9, 22), DatePrecision.day, 'US'),
-      );
+    late MovieData movie;
 
+    setUp(() {
+      movie = MovieData()
+        ..setNewDetails(
+          labels: [(text: 'The Shawshank Redemption', language: 'en')],
+          releaseDates: [
+            DateWithPrecisionAndCountry(
+                DateTime(1994, 9, 22), DatePrecision.day, 'US')
+          ],
+        );
+    });
+
+    testWidgets('should render the movie details', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -23,16 +30,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text(movie.title), findsAtLeastNWidgets(1));
+      expect(find.text(movie.title!), findsAtLeastNWidgets(1));
     });
 
     testWidgets('should bookmark the movie', (WidgetTester tester) async {
-      final movie = MovieData(
-        'The Shawshank Redemption',
-        DateWithPrecisionAndCountry(
-            DateTime(1994, 9, 22), DatePrecision.day, 'US'),
-      );
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -50,56 +51,48 @@ void main() {
 
       expect(movie.bookmarked, isTrue);
     });
-  });
+    testWidgets("should display the movie's genres",
+        (WidgetTester tester) async {
+      movie.setNewDetails(genres: ['Drama']);
 
-  testWidgets("should display the movie's genres", (WidgetTester tester) async {
-    final movie = MovieData(
-      'The Shawshank Redemption',
-      DateWithPrecisionAndCountry(
-          DateTime(1994, 9, 22), DatePrecision.day, 'US'),
-    )..setDetails(genres: ['Drama']);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: MoviePage(movie),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MoviePage(movie),
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.text('Drama'), findsOneWidget);
-  });
+      expect(find.text('Drama'), findsOneWidget);
+    });
 
-  testWidgets("should display the movie's titles and release dates",
-      (WidgetTester tester) async {
-    final movie = MovieData(
-      'The Shawshank Redemption',
-      DateWithPrecisionAndCountry(
-          DateTime(1994, 9, 22), DatePrecision.day, 'US'),
-    )..setDetails(
-        titles: [(title: 'The Shawshank Redemption', language: 'en')],
+    testWidgets("should display the movie's titles and release dates",
+        (WidgetTester tester) async {
+      movie.setNewDetails(
+        titles: [(text: 'The Shawshank Redemption', language: 'en')],
         releaseDates: [
           DateWithPrecisionAndCountry(
               DateTime(1994, 9, 22), DatePrecision.day, 'US')
         ],
       );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: MoviePage(movie),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MoviePage(movie),
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.text('en'), findsOneWidget);
-    expect(find.text('The Shawshank Redemption'), findsNWidgets(2));
+      expect(find.text('en'), findsOneWidget);
+      expect(find.text('The Shawshank Redemption'), findsNWidgets(2));
 
-    expect(find.text('US'), findsOneWidget);
-    expect(find.textContaining('1994'), findsOneWidget);
+      expect(find.text('US'), findsOneWidget);
+      expect(find.textContaining('1994'), findsOneWidget);
+    });
   });
 }

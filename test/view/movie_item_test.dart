@@ -6,20 +6,26 @@ import 'package:release_schedule/view/movie_item.dart';
 import 'package:release_schedule/view/movie_page.dart';
 
 void main() {
+  late MovieData testMovie;
+
+  setUp(() {
+    testMovie = MovieData()
+      ..setNewDetails(
+        labels: [(text: 'Test Movie', language: 'en')],
+        releaseDates: [
+          DateWithPrecisionAndCountry(
+              DateTime(2023, 1, 1), DatePrecision.day, 'US')
+        ],
+      );
+  });
   testWidgets('MovieItem displays movie data', (WidgetTester tester) async {
-    final movie = MovieData(
-      'Test Movie',
-      DateWithPrecisionAndCountry(
-          DateTime(2023, 1, 1), DatePrecision.day, 'US'),
-    );
-    movie.setDetails(
+    testMovie.setNewDetails(
       genres: ['Action', 'Adventure'],
     );
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MovieItem(movie),
+          body: MovieItem(testMovie),
         ),
       ),
     );
@@ -30,26 +36,17 @@ void main() {
   });
 
   testWidgets('should update when the movie is modified', (tester) async {
-    final movie = MovieData(
-      'Test Movie',
-      DateWithPrecisionAndCountry(
-          DateTime(2023, 1, 1), DatePrecision.day, 'US'),
-    );
-    movie.setDetails(
-      genres: ['Action', 'Adventure'],
-    );
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MovieItem(movie),
+          body: MovieItem(testMovie),
         ),
       ),
     );
 
     expect(find.text('Test Movie'), findsOneWidget);
 
-    movie.setDetails(
+    testMovie.setNewDetails(
       genres: ['Action', 'Adventure', 'Comedy'],
     );
 
@@ -59,26 +56,17 @@ void main() {
   });
 
   testWidgets('should update when the movie is bookmarked', (tester) async {
-    final movie = MovieData(
-      'Test Movie',
-      DateWithPrecisionAndCountry(
-          DateTime(2023, 1, 1), DatePrecision.day, 'US'),
-    );
-    movie.setDetails(
-      genres: ['Action', 'Adventure'],
-    );
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MovieItem(movie),
+          body: MovieItem(testMovie),
         ),
       ),
     );
 
     expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
 
-    movie.setDetails(
+    testMovie.setDetails(
       bookmarked: true,
     );
 
@@ -89,19 +77,10 @@ void main() {
 
   testWidgets("should update the bookmark state when the icon is tapped",
       (tester) async {
-    final movie = MovieData(
-      'Test Movie',
-      DateWithPrecisionAndCountry(
-          DateTime(2023, 1, 1), DatePrecision.day, 'US'),
-    );
-    movie.setDetails(
-      genres: ['Action', 'Adventure'],
-    );
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MovieItem(movie),
+          body: MovieItem(testMovie),
         ),
       ),
     );
@@ -116,19 +95,10 @@ void main() {
   });
 
   testWidgets("should navigate to MoviePage when tapped", (tester) async {
-    final movie = MovieData(
-      'Test Movie',
-      DateWithPrecisionAndCountry(
-          DateTime(2023, 1, 1), DatePrecision.day, 'US'),
-    );
-    movie.setDetails(
-      genres: ['Action', 'Adventure'],
-    );
-
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MovieItem(movie),
+          body: MovieItem(testMovie),
         ),
       ),
     );

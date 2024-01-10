@@ -55,6 +55,7 @@ class DateWithPrecision implements Comparable<DateWithPrecision> {
             .firstWhere((element) => element.name == json[1]);
 
   DateWithPrecision.today() : this(DateTime.now().toUtc(), DatePrecision.day);
+  DateWithPrecision.unspecified() : this(DateTime(0), DatePrecision.decade);
 
   List<dynamic> toJsonEncodable() {
     return [date.toIso8601String(), precision.name];
@@ -121,4 +122,29 @@ class DateWithPrecision implements Comparable<DateWithPrecision> {
             this.date.minute == date.minute;
     }
   }
+}
+
+class Dated<T> {
+  final T value;
+  final DateTime date;
+
+  Dated(this.value, this.date);
+
+  Dated.now(this.value) : date = DateTime.now().toUtc();
+
+  Dated.fromJsonEncodable(
+      dynamic json, T Function(dynamic) valueFromJsonEncodable)
+      : value = valueFromJsonEncodable(json["value"]),
+        date = DateTime.parse(json["date"]);
+
+  Map<String, dynamic> toJsonEncodable(
+      dynamic Function(T) valueToJsonEncodable) {
+    return {
+      "value": valueToJsonEncodable(value),
+      "date": date.toIso8601String()
+    };
+  }
+
+  @override
+  toString() => "$value as of $date";
 }

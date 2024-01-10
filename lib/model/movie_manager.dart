@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:release_schedule/api/movie_api.dart';
+import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/delayed_function_caller.dart';
 import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie.dart';
@@ -64,11 +65,15 @@ class MovieManager extends ChangeNotifier {
   void _insertMovie(MovieData movie) {
     int min = 0;
     int max = movies.length - 1;
+    DateWithPrecision? movieDate = movie.releaseDate?.dateWithPrecision;
     while (min <= max) {
       int center = (min + max) ~/ 2;
-      int diff = movie.releaseDate.dateWithPrecision
-          .compareTo(movies[center].releaseDate.dateWithPrecision);
-      if (diff < 0) {
+      DateWithPrecision? centerDate =
+          movies[center].releaseDate?.dateWithPrecision;
+      int diff = movieDate != null && centerDate != null
+          ? movieDate.compareTo(centerDate)
+          : 0;
+      if (movieDate == null || centerDate != null && diff < 0) {
         max = center - 1;
       } else {
         min = center + 1;
@@ -80,15 +85,13 @@ class MovieManager extends ChangeNotifier {
   void _resortMovies() {
     for (int i = 0; i < movies.length; i++) {
       var temp = movies[i];
+      DateWithPrecision? tempDate = temp.releaseDate?.dateWithPrecision;
       int j = i - 1;
-      for (;
-          j >= 0 &&
-              movies[j]
-                      .releaseDate
-                      .dateWithPrecision
-                      .compareTo(temp.releaseDate.dateWithPrecision) >
-                  0;
-          j--) {
+      for (; j >= 0; j--) {
+        DateWithPrecision? date = movies[j].releaseDate?.dateWithPrecision;
+        if (date == null || tempDate != null && date.compareTo(tempDate) <= 0) {
+          break;
+        }
         movies[j + 1] = movies[j];
       }
       movies[j + 1] = temp;
@@ -115,8 +118,8 @@ class MovieManager extends ChangeNotifier {
         movies,
         search,
         (movie) => [
-              movie.title,
-              ...(movie.titles?.map((title) => title.title) ?? []),
+              movie.title ?? "",
+              ...(movie.titles?.value?.map((title) => title.text) ?? []),
             ]);
     return results;
   }

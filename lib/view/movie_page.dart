@@ -29,7 +29,7 @@ class MoviePage extends StatelessWidget {
       animation: movie,
       builder: (context, child) {
         return Scaffold(
-          appBar: AppBar(title: Text(movie.title), actions: [
+          appBar: AppBar(title: Text(movie.title ?? "-"), actions: [
             IconButton(
               icon: Icon(movie.bookmarked
                   ? Icons.bookmark_added
@@ -39,20 +39,27 @@ class MoviePage extends StatelessWidget {
           ]),
           body: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(18.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: movie.genres
+                    children: movie.genres?.value
                             ?.map((genre) => Chip(label: Text(genre)))
                             .toList() ??
                         [],
                   ),
-                  const Heading("Description"),
-                  Text(movie.description ?? "No description"),
+                  const Heading("About"),
+                  Text(
+                    movie.description?.value?.trim().replaceAll("\n", "\n\n") ??
+                        "-",
+                    textAlign: TextAlign.justify,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          height: 1.6,
+                        ),
+                  ),
                   const Heading("Titles"),
                   Table(
                     border: TableBorder.symmetric(
@@ -60,7 +67,7 @@ class MoviePage extends StatelessWidget {
                         color: Theme.of(context).dividerColor,
                       ),
                     ),
-                    children: movie.titles?.map((title) {
+                    children: movie.titles?.value?.map((title) {
                           return TableRow(
                             children: [
                               TableCell(
@@ -71,7 +78,7 @@ class MoviePage extends StatelessWidget {
                               TableCell(
                                   child: Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text(title.title),
+                                child: Text(title.text),
                               ))
                             ],
                           );
@@ -85,7 +92,7 @@ class MoviePage extends StatelessWidget {
                         color: Theme.of(context).dividerColor,
                       ),
                     ),
-                    children: movie.releaseDates?.map((releaseDate) {
+                    children: movie.releaseDates?.value?.map((releaseDate) {
                           return TableRow(
                             children: [
                               TableCell(

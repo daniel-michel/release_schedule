@@ -13,10 +13,10 @@ class MovieItem extends StatelessWidget {
       animation: movie,
       builder: (context, widget) {
         return ListTile(
-          title: Text(movie.title),
+          title: Text(movie.title ?? "-"),
           subtitle: Text(
             (showReleaseDate ? "${movie.releaseDate} " : "") +
-                (movie.genres?.join(", ") ?? ""),
+                (movie.genres?.value?.join(", ") ?? ""),
           ),
           trailing: IconButton(
             icon: Icon(movie.bookmarked
