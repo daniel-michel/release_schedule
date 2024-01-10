@@ -7,6 +7,7 @@ class MovieData extends ChangeNotifier {
   bool _bookmarked = false;
 
   bool _hasDetails = false;
+  String? _description;
   List<DateWithPrecisionAndCountry>? _releaseDates;
   List<String>? _genres;
   List<TitleInLanguage>? _titles;
@@ -23,6 +24,10 @@ class MovieData extends ChangeNotifier {
 
   bool get bookmarked {
     return _bookmarked;
+  }
+
+  get description {
+    return _description;
   }
 
   List<DateWithPrecisionAndCountry>? get releaseDates {
@@ -47,6 +52,7 @@ class MovieData extends ChangeNotifier {
     setDetails(
         title: movie.title,
         releaseDate: movie.releaseDate,
+        description: movie.description,
         releaseDates: movie.releaseDates,
         genres: movie.genres,
         titles: movie.titles);
@@ -56,6 +62,7 @@ class MovieData extends ChangeNotifier {
       {String? title,
       DateWithPrecisionAndCountry? releaseDate,
       bool? bookmarked,
+      String? description,
       List<DateWithPrecisionAndCountry>? releaseDates,
       List<String>? genres,
       List<TitleInLanguage>? titles}) {
@@ -67,6 +74,9 @@ class MovieData extends ChangeNotifier {
     }
     if (bookmarked != null) {
       _bookmarked = bookmarked;
+    }
+    if (description != null) {
+      _description = description;
     }
     if (releaseDates != null) {
       _releaseDates = releaseDates;
@@ -99,6 +109,7 @@ class MovieData extends ChangeNotifier {
       "title": title,
       "releaseDate": _releaseDate.toJsonEncodable(),
       "bookmarked": _bookmarked,
+      "description": _description,
       "releaseDates": releaseDatesByCountry,
       "genres": genres,
       "titles": titlesByCountry,
@@ -111,6 +122,7 @@ class MovieData extends ChangeNotifier {
             DateWithPrecisionAndCountry.fromJsonEncodable(json["releaseDate"]) {
     setDetails(
         bookmarked: json["bookmarked"] as bool,
+        description: json["description"] as String?,
         genres: (json["genres"] as List<dynamic>?)
             ?.map((genre) => genre as String)
             .toList(),

@@ -51,7 +51,8 @@ class MoviePage extends StatelessWidget {
                             .toList() ??
                         [],
                   ),
-                  const SizedBox(height: 20),
+                  const Heading("Description"),
+                  Text(movie.description ?? "No description"),
                   const Heading("Titles"),
                   Table(
                     border: TableBorder.symmetric(

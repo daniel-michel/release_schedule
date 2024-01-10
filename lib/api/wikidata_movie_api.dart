@@ -75,7 +75,7 @@ class WikidataMovieApi implements MovieApi {
       final start = i * batchSize;
       final end = min((i + 1) * batchSize, movieIds.length);
       var response = await _wikidataApi.get(
-          "&action=wbgetentities&format=json&props=labels|claims&ids=${movieIds.sublist(start, end).join("|")}");
+          "&action=wbgetentities&format=json&props=labels|claims|sitelinks/urls&ids=${movieIds.sublist(start, end).join("|")}");
       Map<String, dynamic> result = jsonDecode(response.body);
       Map<String, dynamic> batchEntities = result["entities"];
       entities.addAll(batchEntities);
@@ -93,6 +93,12 @@ class WikidataMovieApi implements MovieApi {
     // to reduce the number of api calls,
     // they will be retrieved from the cache in fromWikidataEntity
     await _getLabelsForEntities(allCountryAndGenreIds);
+
+    // Get wikipedia explaintexts
+    Iterable<String> allWikipediaTitles =
+        selectInJson<String>(entities, "*.sitelinks.enwiki.url")
+            .map((url) => url.split("/").last);
+    await _getWikipediaExplainTextForTitles(allWikipediaTitles.toList());
 
     return movieIds
         .map((id) => WikidataMovieData.fromWikidataEntity(id, entities[id]))
@@ -142,6 +148,13 @@ class WikidataMovieData extends MovieData {
     String title =
         selectInJson<String>(entity, "labels.en.value").firstOrNull ??
             selectInJson<String>(entity, "labels.*.value").first;
+    String? wikipediaTitle = selectInJson(entity, "sitelinks.enwiki.url")
+        .firstOrNull
+        ?.split("/")
+        .last;
+    String? description = wikipediaTitle != null
+        ? _getCachedWikipediaExplainTextFotTitle(wikipediaTitle)
+        : null;
     Map<String, dynamic> claims = entity["claims"];
     List<TitleInLanguage>? titles = selectInJson(
             claims, "${WikidataProperties.title}.*.mainsnak.datavalue.value")
@@ -167,6 +180,7 @@ class WikidataMovieData extends MovieData {
                 DateTime.now(), DatePrecision.decade, "unknown location"),
         entityId);
     movie.setDetails(
+      description: description,
       titles: titles,
       releaseDates: releaseDates,
       genres: genres,
@@ -266,4 +280,45 @@ Future<Map<String, String>> _getLabelsForEntities(
 
 String _getCachedLabelForEntity(String entityId) {
   return _labelCache[entityId] ?? entityId;
+}
+
+ApiManager _wikipediaApi =
+    ApiManager("https://en.wikipedia.org/w/api.php?format=json&origin=*");
+Map<String, String> _wikipediaExplainTextCache = {};
+Future<Map<String, String>> _getWikipediaExplainTextForTitles(
+    List<String> pageTitles) async {
+  const batchSize = 50;
+  Map<String, String> explainTexts = {};
+  for (int i = pageTitles.length - 1; i >= 0; i--) {
+    if (_labelCache.containsKey(pageTitles[i])) {
+      explainTexts[pageTitles[i]] = _labelCache[pageTitles[i]]!;
+      pageTitles.removeAt(i);
+    }
+  }
+  for (int i = 0; i < (pageTitles.length / batchSize).ceil(); i++) {
+    final start = i * batchSize;
+    final end = min((i + 1) * batchSize, pageTitles.length);
+    Response response = await _wikipediaApi.get(
+        "&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=${pageTitles.sublist(start, end).join("|")}");
+    Map<String, dynamic> result = jsonDecode(response.body);
+    List<dynamic> normalize = result["query"]["normalized"];
+    Map<String, dynamic> batchPages = result["query"]["pages"];
+    for (String pageId in batchPages.keys) {
+      String pageTitle = batchPages[pageId]["title"];
+      String originalTitle = normalize
+              .where((element) => element["to"] == pageTitle)
+              .firstOrNull?["from"] ??
+          pageTitle;
+      String? explainText = batchPages[pageId]["extract"];
+      if (explainText != null) {
+        _wikipediaExplainTextCache[originalTitle] =
+            explainTexts[originalTitle] = explainText;
+      }
+    }
+  }
+  return explainTexts;
+}
+
+String? _getCachedWikipediaExplainTextFotTitle(String title) {
+  return _wikipediaExplainTextCache[title];
 }
