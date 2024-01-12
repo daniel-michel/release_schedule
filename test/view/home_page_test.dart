@@ -19,7 +19,7 @@ void main() {
           ..setNewDetails(
             labels: [(text: 'The Shawshank Redemption', language: 'en')],
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(1994, 9, 22), DatePrecision.day, 'US')
             ],
           ),
@@ -27,7 +27,7 @@ void main() {
           ..setNewDetails(
             labels: [(text: 'The Godfather', language: 'en')],
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(1972, 3, 24), DatePrecision.day, 'US')
             ],
           ),
@@ -35,7 +35,7 @@ void main() {
           ..setNewDetails(
             labels: [(text: 'The Dark Knight', language: 'en')],
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(2008, 7, 18), DatePrecision.day, 'US')
             ],
           ),

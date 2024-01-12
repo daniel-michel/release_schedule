@@ -13,7 +13,7 @@ void main() {
       ..setNewDetails(
         labels: [(text: 'The Matrix', language: 'en')],
         releaseDates: [
-          DateWithPrecisionAndCountry(
+          DateWithPrecisionAndPlace(
               DateTime(1999, 3, 31), DatePrecision.day, 'USA')
         ],
       );
@@ -21,7 +21,7 @@ void main() {
       ..setNewDetails(
         labels: [(text: 'The Matrix Reloaded', language: 'en')],
         releaseDates: [
-          DateWithPrecisionAndCountry(
+          DateWithPrecisionAndPlace(
               DateTime(2003, 5, 7), DatePrecision.day, 'USA')
         ],
       );
@@ -57,7 +57,7 @@ void main() {
           ..setNewDetails(
             labels: [(text: 'The Matrix Revolutions', language: 'en')],
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(2003, 11, 5), DatePrecision.day, 'USA')
             ],
           ),
@@ -82,7 +82,7 @@ void main() {
           genres: ['Action', 'Adventure'],
           labels: [(text: 'The Matrix Reloaded', language: 'en')],
           releaseDates: [
-            DateWithPrecisionAndCountry(
+            DateWithPrecisionAndPlace(
                 DateTime(2003, 5, 7), DatePrecision.day, 'USA')
           ],
         );
@@ -112,7 +112,7 @@ void main() {
           ..updateWithNewIgnoringUserControlled(theMatrixReloaded)
           ..setNewDetails(
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(2003, 5, 7), DatePrecision.day, 'USA')
             ],
           ),
@@ -120,7 +120,7 @@ void main() {
           ..updateWithNewIgnoringUserControlled(theMatrix)
           ..setNewDetails(
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(2003, 5, 7), DatePrecision.month, 'USA')
             ],
           ),
@@ -139,7 +139,7 @@ void main() {
           ..updateWithNewIgnoringUserControlled(theMatrixReloaded)
           ..setNewDetails(
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(1998, 5, 7), DatePrecision.day, 'USA')
             ],
           ),
@@ -151,7 +151,7 @@ void main() {
       final movie = movieManager.movies.first;
       movie.setNewDetails(
         releaseDates: [
-          DateWithPrecisionAndCountry(DateTime(2003, 5, 7), DatePrecision.day,
+          DateWithPrecisionAndPlace(DateTime(2003, 5, 7), DatePrecision.day,
               'United States of America')
         ],
       );
@@ -171,7 +171,7 @@ void main() {
             (text: 'Harry Potter and the Philosopher\'s Stone', language: 'en')
           ],
           releaseDates: [
-            DateWithPrecisionAndCountry(
+            DateWithPrecisionAndPlace(
                 DateTime(2001, 11, 4), DatePrecision.day, 'UK')
           ],
         );

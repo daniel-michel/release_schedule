@@ -67,3 +67,10 @@ Iterable<({T value, String path})> selectInJsonWithPath<T>(
     }
   }
 }
+
+T? decodeOptionalJson<T>(dynamic json, T Function(dynamic) decode) {
+  if (json == null) {
+    return null;
+  }
+  return decode(json);
+}

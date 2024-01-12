@@ -28,10 +28,10 @@ class MovieManager extends ChangeNotifier {
     addMovies(await cache.retrieve());
   }
 
-  void _moviesModified({bool withoutAddingOrRemoving = false}) {
+  void _moviesModified({bool withoutListModification = false}) {
     cacheUpdater.call();
-    if (!withoutAddingOrRemoving) {
-      // only notify listeners if movies are added or removed
+    if (!withoutListModification) {
+      // only notify listeners if movies are added, removed or reordered
       // if they are modified in place they will notify listeners themselves
       notifyListeners();
     }
@@ -46,7 +46,7 @@ class MovieManager extends ChangeNotifier {
       if (existing == null) {
         _insertMovie(movie);
         movie.addListener(() {
-          _moviesModified(withoutAddingOrRemoving: true);
+          _moviesModified(withoutListModification: true);
           _resortMovies();
         });
         added = true;
@@ -83,6 +83,7 @@ class MovieManager extends ChangeNotifier {
   }
 
   void _resortMovies() {
+    bool resort = false;
     for (int i = 0; i < movies.length; i++) {
       var temp = movies[i];
       DateWithPrecision? tempDate = temp.releaseDate?.dateWithPrecision;
@@ -92,9 +93,13 @@ class MovieManager extends ChangeNotifier {
         if (date == null || tempDate != null && date.compareTo(tempDate) <= 0) {
           break;
         }
+        resort = true;
         movies[j + 1] = movies[j];
       }
       movies[j + 1] = temp;
+    }
+    if (resort) {
+      _moviesModified();
     }
   }
 

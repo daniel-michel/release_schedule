@@ -19,7 +19,7 @@ void main() {
           ..setNewDetails(
             labels: [(text: 'Movie 1', language: 'en')],
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(2023, 1, 1), DatePrecision.day, 'US')
             ],
           ),
@@ -27,7 +27,7 @@ void main() {
           ..setNewDetails(
             labels: [(text: 'Movie 2', language: 'en')],
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(2023, 1, 1), DatePrecision.day, 'US')
             ],
           )
@@ -58,7 +58,7 @@ void main() {
           ..setNewDetails(
             labels: [(text: 'Movie 3', language: 'en')],
             releaseDates: [
-              DateWithPrecisionAndCountry(
+              DateWithPrecisionAndPlace(
                   DateTime(2023, 1, 1), DatePrecision.day, 'US')
             ],
           )

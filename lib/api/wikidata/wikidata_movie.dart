@@ -42,13 +42,13 @@ class WikidataMovieData extends MovieData {
         ?.split("/")
         .last;
     Dated<String?>? description = wikipediaTitle != null
-        ? getCachedWikipediaExplainTextFotTitle(wikipediaTitle)
+        ? getCachedWikipediaIntroTextFotTitle(wikipediaTitle)
         : null;
-    List<DateWithPrecisionAndCountry> releaseDates =
+    List<DateWithPrecisionAndPlace> releaseDates =
         _getReleaseDates(claims).toList();
     // Sort release dates with higher precision to the beginning
-    releaseDates.sort((a, b) => -a.dateWithPrecision.precision.index
-        .compareTo(b.dateWithPrecision.precision.index));
+    releaseDates
+        .sort((a, b) => -a.precision.index.compareTo(b.precision.index));
     List<String>? genres = selectInJson<String>(
             claims, "${WikidataProperties.genre}.*.mainsnak.datavalue.value.id")
         .map(getCachedLabelForEntity)
@@ -64,11 +64,11 @@ class WikidataMovieData extends MovieData {
     return movie;
   }
 
-  static Iterable<DateWithPrecisionAndCountry> _getReleaseDates(
+  static Iterable<DateWithPrecisionAndPlace> _getReleaseDates(
       Map<String, dynamic> claims) {
     return selectInJson(claims, "${WikidataProperties.publicationDate}.*")
         .where((dateClaim) => dateClaim["rank"] != "deprecated")
-        .expand<DateWithPrecisionAndCountry>((dateClaim) {
+        .expand<DateWithPrecisionAndPlace>((dateClaim) {
       var value = selectInJson(dateClaim, "mainsnak.datavalue.value").first;
       Iterable<String> countries = (selectInJson<String>(dateClaim,
               "qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id"))
@@ -76,7 +76,7 @@ class WikidataMovieData extends MovieData {
       if (countries.isEmpty) {
         countries = ["unknown location"];
       }
-      return countries.map((country) => DateWithPrecisionAndCountry(
+      return countries.map((country) => DateWithPrecisionAndPlace(
           DateTime.parse(value["time"]),
           precisionFromWikidata(value["precision"]),
           country));

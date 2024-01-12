@@ -98,7 +98,7 @@ class WikidataMovieApi implements MovieApi {
     Iterable<String> allWikipediaTitles =
         selectInJson<String>(entities, "*.sitelinks.enwiki.url")
             .map((url) => url.split("/").last);
-    await _getWikipediaExplainTextForTitles(allWikipediaTitles.toList());
+    await _getWikipediaIntroTextForTitles(allWikipediaTitles.toList());
 
     return movieIds
         .map((id) => WikidataMovieData.fromWikidataEntity(id, entities[id]))
@@ -199,15 +199,15 @@ String getCachedLabelForEntity(String entityId) {
 
 ApiManager _wikipediaApi =
     ApiManager("https://en.wikipedia.org/w/api.php?format=json&origin=*");
-Map<String, Dated<String?>> _wikipediaExplainTextCache = {};
+Map<String, Dated<String?>> _wikipediaIntroTextCache = {};
 
-Future<Map<String, Dated<String?>>> _getWikipediaExplainTextForTitles(
+Future<Map<String, Dated<String?>>> _getWikipediaIntroTextForTitles(
     List<String> pageTitles) async {
   const batchSize = 50;
   Map<String, Dated<String?>> explainTexts = {};
   for (int i = pageTitles.length - 1; i >= 0; i--) {
-    if (_wikipediaExplainTextCache.containsKey(pageTitles[i])) {
-      explainTexts[pageTitles[i]] = _wikipediaExplainTextCache[pageTitles[i]]!;
+    if (_wikipediaIntroTextCache.containsKey(pageTitles[i])) {
+      explainTexts[pageTitles[i]] = _wikipediaIntroTextCache[pageTitles[i]]!;
       pageTitles.removeAt(i);
     }
   }
@@ -227,7 +227,7 @@ Future<Map<String, Dated<String?>>> _getWikipediaExplainTextForTitles(
           pageTitle;
       String? explainText = batchPages[pageId]["extract"];
       if (explainText != null) {
-        _wikipediaExplainTextCache[originalTitle] =
+        _wikipediaIntroTextCache[originalTitle] =
             explainTexts[originalTitle] = Dated.now(explainText);
       }
     }
@@ -235,6 +235,6 @@ Future<Map<String, Dated<String?>>> _getWikipediaExplainTextForTitles(
   return explainTexts;
 }
 
-Dated<String?>? getCachedWikipediaExplainTextFotTitle(String title) {
-  return _wikipediaExplainTextCache[title];
+Dated<String?>? getCachedWikipediaIntroTextFotTitle(String title) {
+  return _wikipediaIntroTextCache[title];
 }

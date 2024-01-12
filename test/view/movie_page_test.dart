@@ -13,7 +13,7 @@ void main() {
         ..setNewDetails(
           labels: [(text: 'The Shawshank Redemption', language: 'en')],
           releaseDates: [
-            DateWithPrecisionAndCountry(
+            DateWithPrecisionAndPlace(
                 DateTime(1994, 9, 22), DatePrecision.day, 'US')
           ],
         );
@@ -73,7 +73,7 @@ void main() {
       movie.setNewDetails(
         titles: [(text: 'The Shawshank Redemption', language: 'en')],
         releaseDates: [
-          DateWithPrecisionAndCountry(
+          DateWithPrecisionAndPlace(
               DateTime(1994, 9, 22), DatePrecision.day, 'US')
         ],
       );

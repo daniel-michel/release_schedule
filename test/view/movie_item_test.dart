@@ -13,7 +13,7 @@ void main() {
       ..setNewDetails(
         labels: [(text: 'Test Movie', language: 'en')],
         releaseDates: [
-          DateWithPrecisionAndCountry(
+          DateWithPrecisionAndPlace(
               DateTime(2023, 1, 1), DatePrecision.day, 'US')
         ],
       );

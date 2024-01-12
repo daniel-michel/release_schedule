@@ -190,7 +190,7 @@ class OverviewPage extends StatelessWidget {
                     filter: (movie) =>
                         movie.bookmarked ||
                         (movie.releaseDate != null &&
-                            movie.releaseDate!.dateWithPrecision.precision >=
+                            movie.releaseDate!.precision >=
                                 DatePrecision.month &&
                             (movie.titles?.value?.length ?? 0) >= 1),
                   ),
@@ -206,6 +206,7 @@ class OverviewPage extends StatelessWidget {
                             content: Text("Failed to load upcoming movies"),
                           ),
                         );
+                        rethrow;
                       }
                     },
                   ),
@@ -238,9 +239,8 @@ class HamburgerMenu extends StatelessWidget {
             onTap: () => manager.removeMoviesWhere((movie) =>
                 !movie.bookmarked &&
                 !(movie.releaseDates?.value?.any((date) =>
-                        date.dateWithPrecision.precision >=
-                            DatePrecision.month &&
-                        date.dateWithPrecision.date.isAfter(DateTime.now()
+                        date.precision >= DatePrecision.month &&
+                        date.date.isAfter(DateTime.now()
                             .subtract(const Duration(days: 30)))) ??
                     false)),
           ),
