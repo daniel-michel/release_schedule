@@ -16,7 +16,13 @@ class MovieManagerList extends StatelessWidget {
         return Column(
           children: [
             manager.loading ? const LinearProgressIndicator() : Container(),
-            Expanded(child: MovieList(manager.movies, filter: filter))
+            Expanded(
+              child: MovieList(
+                movies: manager.movies,
+                manager: manager,
+                filter: filter,
+              ),
+            )
           ],
         );
       },

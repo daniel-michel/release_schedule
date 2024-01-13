@@ -1,9 +1,19 @@
 import 'package:release_schedule/model/movie.dart';
 
+enum InformationFidelity {
+  search,
+  upcoming,
+  details,
+}
+
 class MovieApi {
-  Future<List<MovieData>> getUpcomingMovies(DateTime startDate,
+  Future<Iterable<MovieData>> getUpcomingMovies(DateTime startDate,
           [int count = 10]) async =>
       [];
 
-  Future<List<MovieData>> searchForMovies(String searchTerm) async => [];
+  Future<Iterable<MovieData>> searchForMovies(String searchTerm) async => [];
+
+  Future<void> updateMovies(
+          List<MovieData> movies, InformationFidelity fidelity) async =>
+      movies;
 }

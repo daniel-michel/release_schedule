@@ -61,8 +61,7 @@ void main() {
       MovieManager movieManager = MovieManager(MovieApi(), storage);
       await tester.pumpWidget(MaterialApp(home: HomePage(movieManager)));
 
-      await tester.enterText(
-          find.byType(TextField), 'The Shawshank Redemption');
+      await tester.enterText(find.byType(TextField), 'The Shawshank Redempt');
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 

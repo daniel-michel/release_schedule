@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:release_schedule/model/movie.dart';
+import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_page.dart';
 
 class MovieItem extends StatelessWidget {
+  final MovieManager manager;
   final MovieData movie;
   final bool showReleaseDate;
-  const MovieItem(this.movie, {this.showReleaseDate = false, super.key});
+  const MovieItem({
+    required this.movie,
+    required this.manager,
+    this.showReleaseDate = false,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,10 +21,18 @@ class MovieItem extends StatelessWidget {
       builder: (context, widget) {
         return ListTile(
           title: Text(movie.title ?? "-"),
-          subtitle: Text(
-            (showReleaseDate ? "${movie.releaseDate} " : "") +
-                (movie.genres?.value?.join(", ") ?? ""),
-          ),
+          leading: movie.loading ? const CircularProgressIndicator() : null,
+          subtitle: showReleaseDate || movie.genres?.value != null
+              ? Text(
+                  (showReleaseDate
+                          ? "${movie.releaseDate ?? "release date unknown"}"
+                          : "") +
+                      (showReleaseDate && movie.genres?.value != null
+                          ? " - "
+                          : "") +
+                      (movie.genres?.value?.join(", ") ?? ""),
+                )
+              : null,
           trailing: IconButton(
             icon: Icon(movie.bookmarked
                 ? Icons.bookmark_added
@@ -29,7 +44,7 @@ class MovieItem extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  return MoviePage(movie);
+                  return MoviePage(movie: movie, manager: manager);
                 },
               ),
             );

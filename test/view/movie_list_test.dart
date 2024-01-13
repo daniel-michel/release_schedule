@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:release_schedule/api/movie_api.dart';
 import 'package:release_schedule/model/dates.dart';
+import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie.dart';
+import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_item.dart';
 import 'package:release_schedule/view/movie_list.dart';
 
 void main() {
   group('MovieList', () {
+    late MovieManager manager;
     late List<MovieData> movies;
 
     setUp(() {
@@ -28,13 +32,18 @@ void main() {
             ],
           )
       ];
+      manager = MovieManager(
+        MovieApi(),
+        InMemoryMovieStorage(),
+      );
+      manager.addMovies(movies);
     });
 
     testWidgets('should render a list of movies', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MovieList(movies),
+            body: MovieList(movies: movies, manager: manager),
           ),
         ),
       );
@@ -50,7 +59,8 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: MovieList(
-              movies,
+              movies: movies,
+              manager: manager,
               filter: (movie) => movie.title?.contains('Godfather') == true,
             ),
           ),

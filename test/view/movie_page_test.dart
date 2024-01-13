@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:release_schedule/api/movie_api.dart';
 import 'package:release_schedule/model/dates.dart';
+import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie.dart';
+import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_page.dart';
 
 void main() {
   group('MoviePage', () {
+    late MovieManager manager;
     late MovieData movie;
 
     setUp(() {
@@ -17,13 +21,18 @@ void main() {
                 DateTime(1994, 9, 22), DatePrecision.day, 'US')
           ],
         );
+      manager = MovieManager(
+        MovieApi(),
+        InMemoryMovieStorage(),
+      );
+      manager.addMovies([movie]);
     });
 
     testWidgets('should render the movie details', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MoviePage(movie),
+            body: MoviePage(movie: movie, manager: manager),
           ),
         ),
       );
@@ -37,7 +46,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MoviePage(movie),
+            body: MoviePage(movie: movie, manager: manager),
           ),
         ),
       );
@@ -58,7 +67,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MoviePage(movie),
+            body: MoviePage(movie: movie, manager: manager),
           ),
         ),
       );
@@ -81,7 +90,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MoviePage(movie),
+            body: MoviePage(movie: movie, manager: manager),
           ),
         ),
       );

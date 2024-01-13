@@ -4,6 +4,7 @@ import 'package:release_schedule/model/dates.dart';
 
 class MovieData extends ChangeNotifier {
   bool _bookmarked = false;
+  bool _loading = false;
 
   String? _title;
   DateWithPrecisionAndPlace? _releaseDate;
@@ -30,6 +31,10 @@ class MovieData extends ChangeNotifier {
     return _bookmarked;
   }
 
+  bool get loading {
+    return _loading;
+  }
+
   Dated<List<TextInLanguage>?>? get titles {
     return _titles;
   }
@@ -48,6 +53,11 @@ class MovieData extends ChangeNotifier {
 
   Dated<List<String>?>? get genres {
     return _genres;
+  }
+
+  void setLoading(bool updating) {
+    _loading = updating;
+    notifyListeners();
   }
 
   /// Updates the information with that of a new version of the movie
@@ -77,6 +87,16 @@ class MovieData extends ChangeNotifier {
       releaseDates: releaseDates != null ? Dated.now(releaseDates) : null,
       genres: genres != null ? Dated.now(genres) : null,
       description: description != null ? Dated.now(description) : null,
+    );
+  }
+
+  void setOutdated() {
+    setDetails(
+      titles: Dated.outdated(_titles?.value),
+      labels: Dated.outdated(_labels?.value),
+      releaseDates: Dated.outdated(_releaseDates?.value),
+      genres: Dated.outdated(_genres?.value),
+      description: Dated.outdated(_description?.value),
     );
   }
 
@@ -118,7 +138,7 @@ class MovieData extends ChangeNotifier {
       DateWithPrecisionAndPlace? mostPrecise =
           _releaseDates?.value?.isNotEmpty ?? false
               ? _releaseDates?.value
-                  ?.reduce((a, b) => a.precision > b.precision ? a : b)
+                  ?.reduce((a, b) => a.precision < b.precision ? b : a)
               : null;
       _releaseDate = mostPrecise;
     }
@@ -183,8 +203,12 @@ class MovieData extends ChangeNotifier {
                   .toList())),
       genres: decodeOptionalJson<Dated<List<String>?>>(
           json["genres"],
-          (json) =>
-              Dated.fromJsonEncodable(json, (value) => value.cast<String>())),
+          (json) => Dated.fromJsonEncodable(
+              json,
+              (value) => decodeOptionalJson(
+                    value,
+                    (genres) => (genres as List<dynamic>).cast<String>(),
+                  ))),
       releaseDates: decodeOptionalJson<Dated<List<DateWithPrecisionAndPlace>?>>(
           json["releaseDates"],
           (json) => Dated.fromJsonEncodable(
@@ -203,15 +227,17 @@ typedef TextInLanguage = ({String text, String language});
 
 class DateWithPrecisionAndPlace {
   final DateWithPrecision dateWithPrecision;
-  final String place;
+  final String? _place;
 
-  DateWithPrecisionAndPlace(DateTime date, DatePrecision precision, this.place)
+  DateWithPrecisionAndPlace(DateTime date, DatePrecision precision, this._place)
       : dateWithPrecision = DateWithPrecision(date, precision);
 
   DateWithPrecisionAndPlace.fromJsonEncodable(List<dynamic> json)
       : dateWithPrecision = DateWithPrecision.fromJsonEncodable(json),
-        place = json[2];
+        _place = json[2];
 
+  bool get isPlaceKnown => _place != null;
+  String? get place => _place;
   DateTime get date => dateWithPrecision.date;
   DatePrecision get precision => dateWithPrecision.precision;
 
@@ -221,6 +247,6 @@ class DateWithPrecisionAndPlace {
 
   @override
   String toString() {
-    return "${dateWithPrecision.toString()} ($place)";
+    return dateWithPrecision.toString() + (place != null ? " ($place)" : "");
   }
 }

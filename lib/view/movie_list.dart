@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/movie.dart';
+import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_item.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class MovieList extends StatelessWidget {
+  final MovieManager manager;
   final List<MovieData> movies;
   final bool Function(MovieData)? filter;
-  const MovieList(this.movies, {this.filter, super.key});
+  const MovieList({
+    required this.movies,
+    required this.manager,
+    this.filter,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +102,7 @@ class MovieList extends StatelessWidget {
             DateWithPrecision.unspecified(),
         groupSeparatorBuilder: (date) => buildGroupSeparator(context, date),
         itemBuilder: (context, index) {
-          return MovieItem(movies[indexMap[index]]);
+          return MovieItem(movie: movies[indexMap[index]], manager: manager);
         },
         initialScrollIndex: firstMovieTodayOrAfterIndex,
       );
@@ -123,7 +130,7 @@ class MovieList extends StatelessWidget {
           DateWithPrecision.unspecified(),
       groupSeparatorBuilder: (date) => buildGroupSeparator(context, date),
       itemBuilder: (context, index) {
-        return MovieItem(movies[index]);
+        return MovieItem(movie: movies[index], manager: manager);
       },
       initialScrollIndex: firstMovieTodayOrAfterIndex,
     );

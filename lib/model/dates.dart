@@ -131,6 +131,11 @@ class Dated<T> {
   Dated(this.value, this.date);
 
   Dated.now(this.value) : date = DateTime.now().toUtc();
+  Dated.outdated(this.value) : date = DateTime(0);
+
+  bool isOutdated(Duration maxAge) {
+    return DateTime.now().toUtc().difference(date) > maxAge;
+  }
 
   Dated.fromJsonEncodable(
       dynamic json, T Function(dynamic) valueFromJsonEncodable)

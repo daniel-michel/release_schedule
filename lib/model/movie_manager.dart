@@ -37,7 +37,7 @@ class MovieManager extends ChangeNotifier {
     }
   }
 
-  List<MovieData> addMovies(List<MovieData> additionalMovies) {
+  List<MovieData> addMovies(Iterable<MovieData> additionalMovies) {
     List<MovieData> actualMovies = [];
     bool added = false;
     for (var movie in additionalMovies) {
@@ -131,20 +131,30 @@ class MovieManager extends ChangeNotifier {
 
   /// Online search for movies.
   Future<List<MovieData>> onlineSearch(String search) async {
-    List<MovieData> movies = await api.searchForMovies(search);
-    return addMovies(movies);
+    Iterable<MovieData> movies = await api.searchForMovies(search);
+    List<MovieData> actualMovies = addMovies(movies);
+    await api.updateMovies(actualMovies, InformationFidelity.search);
+    return actualMovies;
   }
 
   Future<void> loadUpcomingMovies() async {
     try {
       loading = true;
       notifyListeners();
-      List<MovieData> movies = await api
+      Iterable<MovieData> movies = await api
           .getUpcomingMovies(DateTime.now().subtract(const Duration(days: 7)));
-      addMovies(movies);
+      var actualMovies = addMovies(movies);
+      await api.updateMovies(actualMovies, InformationFidelity.upcoming);
     } finally {
       loading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> updateMovies(
+      List<MovieData> movies, InformationFidelity fidelity) async {
+    assert(movies.every((element) => this.movies.contains(element)),
+        "Movies must be managed by this manager");
+    await api.updateMovies(movies, fidelity);
   }
 }

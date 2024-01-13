@@ -8,6 +8,7 @@ import 'package:release_schedule/api/json_helper.dart';
 import 'package:release_schedule/api/movie_api.dart';
 import 'package:release_schedule/api/wikidata/wikidata_movie.dart';
 import 'package:release_schedule/model/dates.dart';
+import 'package:release_schedule/model/movie.dart';
 
 class WikidataProperties {
   static const String instanceOf = "P31";
@@ -36,17 +37,16 @@ class WikidataEntities {
 
 ApiManager _wikidataApi =
     ApiManager("https://www.wikidata.org/w/api.php?origin=*");
+ApiManager _queryApi =
+    ApiManager("https://query.wikidata.org/sparql?format=json&origin=*");
 
 class WikidataMovieApi implements MovieApi {
-  ApiManager queryApi =
-      ApiManager("https://query.wikidata.org/sparql?format=json&origin=*");
-
   @override
-  Future<List<WikidataMovieData>> getUpcomingMovies(DateTime startDate,
+  Future<Iterable<WikidataMovieData>> getUpcomingMovies(DateTime startDate,
       [int count = 100]) async {
-    Response filmResponse = await queryApi.get(
+    Response filmResponse = await _queryApi.get(
         "&query=${Uri.encodeComponent(_createUpcomingMovieQuery(startDate, WikidataEntities.film, count))}");
-    Response filmProjectResponse = await queryApi.get(
+    Response filmProjectResponse = await _queryApi.get(
         "&query=${Uri.encodeComponent(_createUpcomingMovieQuery(startDate, WikidataEntities.filmProject, count))}");
     List<Response> responses = [filmResponse, filmProjectResponse];
     for (var response in responses) {
@@ -59,50 +59,24 @@ class WikidataMovieApi implements MovieApi {
         responses.map((response) => jsonDecode(response.body));
     Iterable<dynamic> entries =
         results.expand((result) => result["results"]["bindings"]);
-    List<String> ids = entries
-        .map((entry) =>
-            RegExp(r"Q\d+$").firstMatch(entry["movie"]["value"])![0]!)
-        .toList();
-    return await _getMovieDataFromIds(ids);
-  }
-
-  Future<List<WikidataMovieData>> _getMovieDataFromIds(
-      List<String> movieIds) async {
-    // Wikidata limits the number of entities per request to 50
-    const batchSize = 50;
-    Map<String, dynamic> entities = {};
-    for (int i = 0; i < (movieIds.length / batchSize).ceil(); i++) {
-      final start = i * batchSize;
-      final end = min((i + 1) * batchSize, movieIds.length);
-      var response = await _wikidataApi.get(
-          "&action=wbgetentities&format=json&props=labels|claims|sitelinks/urls&ids=${movieIds.sublist(start, end).join("|")}");
-      Map<String, dynamic> result = jsonDecode(response.body);
-      Map<String, dynamic> batchEntities = result["entities"];
-      entities.addAll(batchEntities);
-    }
-
-    List<String> allCountryAndGenreIds = [];
-    // Add the country ids from the publication dates
-    allCountryAndGenreIds.addAll(selectInJson<String>(entities,
-        "*.claims.${WikidataProperties.publicationDate}.*.qualifiers.${WikidataProperties.placeOfPublication}.*.datavalue.value.id"));
-    // Add the genre ids
-    allCountryAndGenreIds.addAll(selectInJson<String>(entities,
-        "*.claims.${WikidataProperties.genre}.*.mainsnak.datavalue.value.id"));
-    allCountryAndGenreIds = allCountryAndGenreIds.toSet().toList();
-    // Prefetch all labels for countries and genres
-    // to reduce the number of api calls,
-    // they will be retrieved from the cache in fromWikidataEntity
-    await _getLabelsForEntities(allCountryAndGenreIds);
-
-    // Get wikipedia explaintexts
-    Iterable<String> allWikipediaTitles =
-        selectInJson<String>(entities, "*.sitelinks.enwiki.url")
-            .map((url) => url.split("/").last);
-    await _getWikipediaIntroTextForTitles(allWikipediaTitles.toList());
-
-    return movieIds
-        .map((id) => WikidataMovieData.fromWikidataEntity(id, entities[id]))
-        .toList();
+    return entries.map((entry) {
+      final entityId =
+          RegExp(r"Q\d+$").firstMatch(entry["movie"]["value"])![0]!;
+      final releaseDate = DateTime.parse(entry["minReleaseDate"]["value"]);
+      final String label = entry["movieLabel"]["value"];
+      final movie = WikidataMovieData(entityId);
+      movie.setDetails(
+        releaseDates: Dated.outdated(
+          [DateWithPrecisionAndPlace(releaseDate, DatePrecision.day, null)],
+        ),
+      );
+      if (!RegExp(r"^Q\d+$").hasMatch(label)) {
+        movie.setDetails(
+          labels: Dated.outdated([(text: label, language: "en")]),
+        );
+      }
+      return movie;
+    });
   }
 
   @override
@@ -119,8 +93,173 @@ class WikidataMovieApi implements MovieApi {
         .map((result) => result["title"] as String)
         .where((title) => RegExp(r"^Q\d+$").hasMatch(title))
         .toList();
-    return await _getMovieDataFromIds(ids);
+    return ids.map((id) => WikidataMovieData(id)).toList();
   }
+
+  @override
+  Future<void> updateMovies(
+    List<MovieData> movies,
+    InformationFidelity fidelity,
+  ) async {
+    final List<WikidataMovieData> wikidataMovies =
+        movies.cast<WikidataMovieData>();
+    {
+      // primary data
+      final List<WikidataMovieData> moviesToUpdate = wikidataMovies
+          .where((movie) => shouldUpdateForMovie(
+                [
+                  movie.labels,
+                  movie.titles,
+                  movie.releaseDatesWithPlaceId,
+                  movie.genreIds,
+                  movie.wikipediaTitle,
+                ],
+                movie,
+                aggressive: fidelity == InformationFidelity.details,
+              ))
+          .toList();
+      if (moviesToUpdate.isNotEmpty) {
+        try {
+          for (final movie in moviesToUpdate) {
+            movie.setLoading(true);
+          }
+          await _updateMoviePrimaryData(moviesToUpdate);
+        } finally {
+          for (final movie in moviesToUpdate) {
+            movie.setLoading(false);
+          }
+        }
+      }
+    }
+    if (fidelity == InformationFidelity.upcoming ||
+        fidelity == InformationFidelity.details) {
+      // entity labels
+      final List<WikidataMovieData> moviesToUpdate = wikidataMovies
+          .where((movie) => shouldUpdateForMovie(
+                [
+                  movie.genres,
+                  movie.releaseDates,
+                ],
+                movie,
+                aggressive: fidelity == InformationFidelity.details,
+              ))
+          .toList();
+      if (moviesToUpdate.isNotEmpty) {
+        try {
+          for (final movie in moviesToUpdate) {
+            movie.setLoading(true);
+          }
+          await _updateEntityLabels(moviesToUpdate);
+        } finally {
+          for (final movie in moviesToUpdate) {
+            movie.setLoading(false);
+          }
+        }
+      }
+    }
+    if (fidelity == InformationFidelity.details) {
+      // wikipedia intro text
+      final List<WikidataMovieData> moviesToUpdate = wikidataMovies
+          .where((movie) => shouldUpdateForMovie(
+                [movie.description],
+                movie,
+                aggressive: fidelity == InformationFidelity.details,
+              ))
+          .toList();
+      if (moviesToUpdate.isNotEmpty) {
+        try {
+          for (final movie in moviesToUpdate) {
+            movie.setLoading(true);
+          }
+          await _updateDescriptionUsingWikipediaIntroText(moviesToUpdate);
+        } finally {
+          for (final movie in moviesToUpdate) {
+            movie.setLoading(false);
+          }
+        }
+      }
+    }
+  }
+}
+
+Future<void> _updateMoviePrimaryData(List<WikidataMovieData> movies) async {
+  const batchSize = 50;
+  Map<String, dynamic> entities = {};
+  for (int i = 0; i < (movies.length / batchSize).ceil(); i++) {
+    final start = i * batchSize;
+    final end = min((i + 1) * batchSize, movies.length);
+    final String ids =
+        movies.sublist(start, end).map((movie) => movie.entityId).join("|");
+    var response = await _wikidataApi.get(
+        "&action=wbgetentities&format=json&props=labels|claims|sitelinks&ids=$ids");
+    Map<String, dynamic> result = jsonDecode(response.body);
+    Map<String, dynamic> batchEntities = result["entities"];
+    entities.addAll(batchEntities);
+  }
+  for (final movie in movies) {
+    final entity = entities[movie.entityId];
+    movie.updateWithWikidataEntity(entity);
+  }
+}
+
+Future<void> _updateEntityLabels(List<WikidataMovieData> movies) async {
+  List<String> allCountryAndGenreIds = [];
+  // Add the country ids from the publication dates
+  allCountryAndGenreIds.addAll(movies.expand((movie) =>
+      movie.releaseDatesWithPlaceId?.value
+          ?.map((release) => release.place)
+          .whereType<String>() ??
+      []));
+  // Add the genre ids
+  allCountryAndGenreIds
+      .addAll(movies.expand((movie) => movie.genreIds?.value ?? []));
+  allCountryAndGenreIds = allCountryAndGenreIds.toSet().toList();
+  // Prefetch all labels for countries and genres
+  // to reduce the number of api calls,
+  // they will be retrieved from the cache in updateFromCache
+  await _getLabelsForEntities(allCountryAndGenreIds);
+  for (final movie in movies) {
+    movie.updateGenresFromCache();
+    movie.updateReleaseDatePlacesFromCache();
+  }
+}
+
+Future<void> _updateDescriptionUsingWikipediaIntroText(
+    List<WikidataMovieData> movies) async {
+  Iterable<String> allWikipediaTitles = movies
+      .map<String?>((movie) => movie.wikipediaTitle?.value)
+      .whereType<String>();
+  await _getWikipediaIntroTextForTitles(allWikipediaTitles.toList());
+  for (final movie in movies) {
+    movie.updateWikipediaTitleFromCache();
+  }
+}
+
+bool shouldUpdateForMovie(List<Dated?> data, MovieData movie,
+    {bool aggressive = false}) {
+  if (data.any((data) => data == null)) {
+    return true;
+  }
+  Duration maxAge =
+      aggressive ? const Duration(hours: 2) : maxAgeForMovie(movie);
+  return data.any((data) => data?.isOutdated(maxAge) ?? true);
+}
+
+Duration maxAgeForMovie(MovieData movie) {
+  var releaseDate = movie.releaseDate;
+  if (releaseDate == null) {
+    return const Duration(days: 3);
+  }
+  Duration difference = releaseDate.date.difference(DateTime.now());
+  int inDays = difference.inDays;
+  if (inDays > 30) {
+    return const Duration(days: 14);
+  } else if (inDays > -14) {
+    return const Duration(days: 1);
+  } else if (inDays > -365) {
+    return const Duration(days: 30);
+  }
+  return const Duration(days: 365);
 }
 
 String _createUpcomingMovieQuery(
@@ -129,6 +268,7 @@ String _createUpcomingMovieQuery(
   return """
 SELECT
   ?movie
+  ?movieLabel
   (MIN(?releaseDate) as ?minReleaseDate)
 WHERE {
   ?movie wdt:${WikidataProperties.instanceOf} wd:$instanceOf;
@@ -136,8 +276,10 @@ WHERE {
   ?movie p:${WikidataProperties.publicationDate}/psv:${WikidataProperties.publicationDate} [wikibase:timePrecision ?precision].
   FILTER (xsd:date(?releaseDate) >= xsd:date("$date"^^xsd:dateTime))
   FILTER (?precision >= 10)
+
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?movie
+GROUP BY ?movie ?movieLabel
 ORDER BY ?minReleaseDate
 LIMIT $limit""";
 }
@@ -158,6 +300,8 @@ DatePrecision precisionFromWikidata(int precision) {
 Map<String, String> _labelCache = {};
 Future<Map<String, String>> _getLabelsForEntities(
     List<String> entityIds) async {
+  assert(entityIds.every((id) => RegExp(r"^Q\d+$").hasMatch(id)),
+      "The entity ids must be valid Wikidata ids");
   const batchSize = 50;
   Map<String, String> labels = {};
   for (int i = entityIds.length - 1; i >= 0; i--) {
@@ -170,7 +314,13 @@ Future<Map<String, String>> _getLabelsForEntities(
     final start = i * batchSize;
     final end = min((i + 1) * batchSize, entityIds.length);
     Response response = await _wikidataApi.get(
-        "&action=wbgetentities&format=json&props=labels|claims&ids=${entityIds.sublist(start, end).join("|")}");
+      "&action=wbgetentities&format=json&props=labels|claims&ids=${entityIds.sublist(start, end).join("|")}",
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        "The Wikidata request for labels failed with status ${response.statusCode} ${response.reasonPhrase}\n${response.body}",
+      );
+    }
     Map<String, dynamic> result = jsonDecode(response.body);
     Map<String, dynamic> batchEntities = result["entities"];
     for (String entityId in batchEntities.keys) {
@@ -193,8 +343,8 @@ Future<Map<String, String>> _getLabelsForEntities(
   return labels;
 }
 
-String getCachedLabelForEntity(String entityId) {
-  return _labelCache[entityId] ?? entityId;
+String? getCachedLabelForEntity(String entityId) {
+  return _labelCache[entityId];
 }
 
 ApiManager _wikipediaApi =
@@ -217,24 +367,24 @@ Future<Map<String, Dated<String?>>> _getWikipediaIntroTextForTitles(
     Response response = await _wikipediaApi.get(
         "&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=${pageTitles.sublist(start, end).join("|")}");
     Map<String, dynamic> result = jsonDecode(response.body);
-    List<dynamic> normalize = result["query"]["normalized"];
+    List<dynamic>? normalize = result["query"]["normalized"];
     Map<String, dynamic> batchPages = result["query"]["pages"];
     for (String pageId in batchPages.keys) {
       String pageTitle = batchPages[pageId]["title"];
       String originalTitle = normalize
-              .where((element) => element["to"] == pageTitle)
+              ?.where((element) => element["to"] == pageTitle)
               .firstOrNull?["from"] ??
           pageTitle;
-      String? explainText = batchPages[pageId]["extract"];
-      if (explainText != null) {
+      String? introText = batchPages[pageId]["extract"];
+      if (introText != null) {
         _wikipediaIntroTextCache[originalTitle] =
-            explainTexts[originalTitle] = Dated.now(explainText);
+            explainTexts[originalTitle] = Dated.now(introText);
       }
     }
   }
   return explainTexts;
 }
 
-Dated<String?>? getCachedWikipediaIntroTextFotTitle(String title) {
+Dated<String?>? getCachedWikipediaIntroTextForTitle(String title) {
   return _wikipediaIntroTextCache[title];
 }

@@ -13,15 +13,16 @@ void main() {
   runApp(const MyApp());
 }
 
+final MovieManager _globalMovieManager = MovieManager(
+  WikidataMovieApi(),
+  LocalMovieStorageGetStorage(WikidataMovieData.fromEncodable),
+);
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final MovieManager manager = MovieManager(
-      WikidataMovieApi(),
-      LocalMovieStorageGetStorage(WikidataMovieData.fromEncodable),
-    );
     return MaterialApp(
       title: 'Movie Schedule',
       themeMode: ThemeMode.dark,
@@ -37,7 +38,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
-      home: HomePage(manager),
+      home: HomePage(_globalMovieManager),
     );
   }
 }
@@ -122,7 +123,10 @@ class _HomePageState extends State<HomePage>
       body: SwipeTransition(
         animation: _controller,
         first: OverviewPage(manager: widget.manager),
-        second: SearchResultPage(liveSearch: liveSearch),
+        second: SearchResultPage(
+          liveSearch: liveSearch,
+          manager: widget.manager,
+        ),
       ),
     );
   }
@@ -132,9 +136,11 @@ class SearchResultPage extends StatelessWidget {
   const SearchResultPage({
     super.key,
     required this.liveSearch,
+    required this.manager,
   });
 
   final LiveSearch liveSearch;
+  final MovieManager manager;
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +154,8 @@ class SearchResultPage extends StatelessWidget {
               child: ListView.builder(
                 itemCount: liveSearch.searchResults.length,
                 itemBuilder: (context, index) => MovieItem(
-                  liveSearch.searchResults[index],
+                  movie: liveSearch.searchResults[index],
+                  manager: manager,
                   showReleaseDate: true,
                 ),
               ),
@@ -192,7 +199,7 @@ class OverviewPage extends StatelessWidget {
                         (movie.releaseDate != null &&
                             movie.releaseDate!.precision >=
                                 DatePrecision.month &&
-                            (movie.titles?.value?.length ?? 0) >= 1),
+                            movie.title != null),
                   ),
                   floatingActionButton: FloatingActionButton(
                     child: const Icon(Icons.refresh),
