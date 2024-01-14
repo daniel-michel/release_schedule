@@ -81,7 +81,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _pageController.animateToPage(
         currentPage,
-        duration: const Duration(milliseconds: 700),
+        duration: const Duration(milliseconds: 500),
         curve: Curves.ease,
       );
     });

@@ -34,8 +34,27 @@ class WikidataProperties {
 class WikidataEntities {
   static const String film = "Q11424";
   static const String filmProject = "Q18011172";
+  static const String featureFilm = "Q24869";
+  static const String animatedFilm = "Q202866";
+  static const String animatedFeatureFilm = "Q29168811";
+  static const String threeDFilm = "Q229390";
+  static const String computerAnimatedFilm = "Q28968258";
+  static const String animatedFilmReboot = "Q118189123";
+  static const String filmAdaption = "Q1257444";
   static const String tvSeries = "Q5398426";
 }
+
+const filmTypeEntities = [
+  WikidataEntities.film,
+  WikidataEntities.filmProject,
+  WikidataEntities.featureFilm,
+  WikidataEntities.animatedFilm,
+  WikidataEntities.animatedFeatureFilm,
+  WikidataEntities.threeDFilm,
+  WikidataEntities.computerAnimatedFilm,
+  WikidataEntities.animatedFilmReboot,
+  WikidataEntities.filmAdaption,
+];
 
 ApiManager _wikidataApi =
     ApiManager("https://www.wikidata.org/w/api.php?origin=*");
@@ -83,11 +102,7 @@ class WikidataMovieApi implements MovieApi {
 
   @override
   Future<List<WikidataMovieData>> searchForMovies(String searchTerm) async {
-    var instanceOfEntities = [
-      WikidataEntities.film,
-      WikidataEntities.filmProject,
-    ];
-    var instanceOfQuery = instanceOfEntities
+    var instanceOfQuery = filmTypeEntities
         .map((entity) => "${WikidataProperties.instanceOf}=$entity")
         .join("|");
     String haswbstatement = "haswbstatement:$instanceOfQuery";

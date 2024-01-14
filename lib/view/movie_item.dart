@@ -22,7 +22,7 @@ class MovieItem extends StatelessWidget {
     double gap = min(width / 50, 10);
     double padding = min(width / 20, 15);
     double space = width - gap * 3 - padding * 2;
-    double posterWidth = min(space / 5, 70);
+    double posterWidth = min(space / 4, 70);
     double bookmarkWidth = 50;
     double mainSectionWidth = space - posterWidth - bookmarkWidth;
     return AnimatedBuilder(
