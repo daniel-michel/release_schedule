@@ -28,11 +28,13 @@ class WikidataProperties {
   static const String fskFilmRating = "P1981";
   static const String placeOfPublication = "P291";
   static const String shortName = "P1813";
+  static const String imdbId = "P345";
 }
 
 class WikidataEntities {
   static const String film = "Q11424";
   static const String filmProject = "Q18011172";
+  static const String tvSeries = "Q5398426";
 }
 
 ApiManager _wikidataApi =
@@ -81,10 +83,17 @@ class WikidataMovieApi implements MovieApi {
 
   @override
   Future<List<WikidataMovieData>> searchForMovies(String searchTerm) async {
-    String haswbstatement =
-        "haswbstatement:${WikidataProperties.instanceOf}=${WikidataEntities.film}|${WikidataProperties.instanceOf}=${WikidataEntities.filmProject}";
+    var instanceOfEntities = [
+      WikidataEntities.film,
+      WikidataEntities.filmProject,
+    ];
+    var instanceOfQuery = instanceOfEntities
+        .map((entity) => "${WikidataProperties.instanceOf}=$entity")
+        .join("|");
+    String haswbstatement = "haswbstatement:$instanceOfQuery";
+    String encodedSearchTerm = Uri.encodeComponent(searchTerm);
     String query =
-        "&action=query&list=search&format=json&srsearch=${Uri.encodeComponent(searchTerm)}%20$haswbstatement";
+        "&action=query&list=search&format=json&srsearch=$encodedSearchTerm%20$haswbstatement";
     Response result = await _wikidataApi.get(query);
     Map<String, dynamic> json = jsonDecode(result.body);
     List<Map<String, dynamic>> searchResults =

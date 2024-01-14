@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:release_schedule/api/movie_api.dart';
 import 'package:release_schedule/api/wikidata/wikidata_movie.dart';
@@ -58,25 +60,22 @@ class MoviePage extends StatelessWidget {
             ),
           ]),
           body: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(18.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 4,
-                    children: movie.genres?.value
-                            ?.map((genre) => Chip(label: Text(genre)))
-                            .toList() ??
-                        [],
+            child: Column(
+              children: [
+                HeaderWidget(movie),
+                Padding(
+                  padding: const EdgeInsets.all(18.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      aboutSection(context),
+                      titlesSection(context),
+                      releaseDatesSection(context),
+                      moreInformationSection(context),
+                    ].whereType<Widget>().toList(),
                   ),
-                  aboutSection(context),
-                  titlesSection(context),
-                  releaseDatesSection(context),
-                  wikidataSection(context),
-                ].whereType<Widget>().toList(),
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -181,33 +180,109 @@ class MoviePage extends StatelessWidget {
     );
   }
 
-  Widget? wikidataSection(BuildContext context) {
+  Widget? moreInformationSection(BuildContext context) {
     if (movie is! WikidataMovieData) {
       return null;
     }
+    WikidataMovieData wikidataMovie = movie as WikidataMovieData;
     return Column(
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Heading("Wikidata"),
-                IconButton(
-                  icon: const Icon(Icons.open_in_new),
-                  onPressed: () => launchUrl(Uri.parse(
-                    "https://www.wikidata.org/wiki/${(movie as WikidataMovieData).entityId}",
-                  )),
-                ),
-              ],
+            const Heading("More Information"),
+            TextButton(
+              child: Text(
+                "Wikidata: ${(movie as WikidataMovieData).entityId}",
+              ),
+              onPressed: () => launchUrl(Uri.parse(
+                "https://www.wikidata.org/wiki/${wikidataMovie.entityId}",
+              )),
             ),
-            Text(
-              "Entity Id: ${(movie as WikidataMovieData).entityId}",
-            ),
+            wikidataMovie.wikipediaTitle?.value != null
+                ? TextButton(
+                    child: Text(
+                        "Wikipedia: ${wikidataMovie.wikipediaTitle?.value}"),
+                    onPressed: () => launchUrl(Uri.parse(
+                        "https://en.wikipedia.org/wiki/${Uri.encodeComponent(wikidataMovie.wikipediaTitle?.value ?? "")}")),
+                  )
+                : const SizedBox(),
+            wikidataMovie.imdbId?.value != null
+                ? TextButton(
+                    child: Text("IMDb: ${wikidataMovie.imdbId?.value}"),
+                    onPressed: () => launchUrl(Uri.parse(
+                        "https://www.imdb.com/title/${wikidataMovie.imdbId?.value}")),
+                  )
+                : const SizedBox(),
           ],
         )
       ],
     );
   }
+}
+
+class HeaderWidget extends StatelessWidget {
+  final MovieData movie;
+
+  const HeaderWidget(this.movie, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    bool titleNextToPoster = width > 500;
+    double posterWidth = min(titleNextToPoster ? width / 3 : width, 300);
+    double posterRadius = titleNextToPoster ? 0 : posterWidth * 0.07;
+    double headerTextWidth = titleNextToPoster ? width - posterWidth : width;
+
+    return Flex(
+      direction: titleNextToPoster ? Axis.horizontal : Axis.vertical,
+      crossAxisAlignment: titleNextToPoster
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.center,
+      children: [
+        movie.poster != null
+            ? Hero(
+                tag: movie.poster ?? "",
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(posterRadius),
+                  child: Image(
+                    image: movie.poster!,
+                    width: posterWidth,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            : null,
+        SizedBox(
+          width: headerTextWidth,
+          child: Padding(
+            padding: const EdgeInsets.all(18.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  movie.title ?? "-",
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                Text(movie.releaseDate?.dateWithPrecision.toString() ?? "-"),
+                const SizedBox(height: 10),
+                genreChips(movie),
+              ],
+            ),
+          ),
+        ),
+      ].whereType<Widget>().toList(),
+    );
+  }
+}
+
+Widget genreChips(MovieData movie) {
+  return Wrap(
+    spacing: 10,
+    runSpacing: 4,
+    children: movie.genres?.value
+            ?.map((genre) => Chip(label: Text(genre)))
+            .toList() ??
+        [],
+  );
 }

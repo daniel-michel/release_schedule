@@ -7,6 +7,7 @@ class WikidataMovieData extends MovieData {
   String entityId;
   Dated<List<String>?>? genreIds;
   Dated<String?>? wikipediaTitle;
+  Dated<String?>? imdbId;
   Dated<List<DateWithPrecisionAndPlace>?>? releaseDatesWithPlaceId;
 
   WikidataMovieData(this.entityId);
@@ -36,6 +37,8 @@ class WikidataMovieData extends MovieData {
         ),
       ),
     );
+    imdbId = decodeOptionalJson(encodable["imdbId"],
+        (datedId) => Dated.fromJsonEncodable(datedId, (id) => id));
   }
 
   @override
@@ -58,6 +61,7 @@ class WikidataMovieData extends MovieData {
         "wikipediaTitle": wikipediaTitle?.toJsonEncodable((title) => title),
         "releaseDatesWithPlaceId": releaseDatesWithPlaceId?.toJsonEncodable(
             (dates) => dates?.map((date) => date.toJsonEncodable()).toList()),
+        "imdbId": imdbId?.toJsonEncodable((id) => id),
       });
   }
 
@@ -84,6 +88,10 @@ class WikidataMovieData extends MovieData {
     List<String>? newGenreIds = selectInJson<String>(
             claims, "${WikidataProperties.genre}.*.mainsnak.datavalue.value.id")
         .toList();
+    String? newImdbId = selectInJson(
+            claims, "${WikidataProperties.imdbId}.*.mainsnak.datavalue.value")
+        .firstOrNull;
+    imdbId = Dated.now(newImdbId);
     String? newWikipediaTitle =
         selectInJson(entity, "sitelinks.enwiki.title").firstOrNull;
     if (newGenreIds.isNotEmpty) {

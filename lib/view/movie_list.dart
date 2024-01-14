@@ -42,7 +42,7 @@ class MovieList extends StatelessWidget {
     }
 
     Widget buildGroupSeparator(BuildContext context, DateWithPrecision date) {
-      bool highlight = date.includes(DateTime.now());
+      bool highlight = date.includes(DateTime.now().toUtc());
       return SizedBox(
         height: 50,
         child: Align(

@@ -9,6 +9,8 @@ class MovieData extends ChangeNotifier {
   String? _title;
   DateWithPrecisionAndPlace? _releaseDate;
 
+  ImageProvider? _poster;
+
   // if it is entirely null the information was never loaded
   // if only the value is null it was loaded but nothing was found
   Dated<List<TextInLanguage>?>? _titles;
@@ -53,6 +55,10 @@ class MovieData extends ChangeNotifier {
 
   Dated<List<String>?>? get genres {
     return _genres;
+  }
+
+  ImageProvider? get poster {
+    return _poster;
   }
 
   void setLoading(bool updating) {
@@ -102,6 +108,7 @@ class MovieData extends ChangeNotifier {
 
   void setDetails({
     bool? bookmarked,
+    ImageProvider? poster,
     Dated<List<TextInLanguage>?>? titles,
     Dated<List<TextInLanguage>?>? labels,
     Dated<List<DateWithPrecisionAndPlace>?>? releaseDates,
@@ -144,6 +151,9 @@ class MovieData extends ChangeNotifier {
     }
     if (genres != null) {
       _genres = genres;
+    }
+    if (poster != null) {
+      _poster = poster;
     }
     notifyListeners();
   }

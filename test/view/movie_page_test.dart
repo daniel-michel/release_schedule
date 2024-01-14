@@ -98,10 +98,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('en'), findsOneWidget);
-      expect(find.text('The Shawshank Redemption'), findsNWidgets(2));
+      expect(find.text('The Shawshank Redemption'), findsNWidgets(3));
 
       expect(find.text('US'), findsOneWidget);
-      expect(find.textContaining('1994'), findsOneWidget);
+      expect(find.textContaining('1994'), findsNWidgets(2));
     });
   });
 }
