@@ -62,10 +62,13 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: HomePage(movieManager)));
 
       await tester.enterText(find.byType(TextField), 'The Shawshank Redempt');
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        // Required because isolates are used: https://api.flutter.dev/flutter/flutter_test/WidgetTester/runAsync.html
+        await Future.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pumpAndSettle(const Duration(seconds: 4));
 
-      expect(find.text('The Shawshank Redemption'), findsNWidgets(2));
+      expect(find.text('The Shawshank Redemption'), findsOneWidget);
     });
   });
 }

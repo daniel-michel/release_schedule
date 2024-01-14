@@ -18,7 +18,7 @@ List<T> searchList<T>(
     double score = 0;
     List<String> texts = getTexts(e);
     for (var text in texts) {
-      score += searchMatch(search, text);
+      score = max(searchMatch(search, text), score);
     }
     return Scored(e, score);
   }).toList();

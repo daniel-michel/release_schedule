@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:release_schedule/api/movie_api.dart';
 import 'package:release_schedule/model/dates.dart';
 import 'package:release_schedule/model/delayed_function_caller.dart';
@@ -120,13 +120,25 @@ class MovieManager extends ChangeNotifier {
   /// Only search locally cached movies.
   List<MovieData> localSearch(String search) {
     var results = searchList(
-        movies,
-        search,
-        (movie) => [
-              movie.title ?? "",
-              ...(movie.titles?.value?.map((title) => title.text) ?? []),
-            ]);
+      movies,
+      search,
+      (movie) => [
+        movie.title ?? "",
+        ...(movie.titles?.value?.map((title) => title.text) ?? []),
+      ],
+    );
     return results;
+  }
+
+  Future<List<MovieData>> localSearchAsync(String search) async {
+    List<MovieData> results = await compute(_isolateSearch,
+        (movies: movies.map((movie) => movie.copy()).toList(), search: search));
+    final originalMovies = results
+        .map(
+            (result) => movies.where((movie) => result.same(movie)).firstOrNull)
+        .whereType<MovieData>()
+        .toList();
+    return originalMovies;
   }
 
   /// Online search for movies.
@@ -157,4 +169,15 @@ class MovieManager extends ChangeNotifier {
         "Movies must be managed by this manager");
     await api.updateMovies(movies, fidelity);
   }
+}
+
+List<MovieData> _isolateSearch(({List<MovieData> movies, String search}) data) {
+  return searchList(
+    data.movies,
+    data.search,
+    (movie) => [
+      movie.title ?? "",
+      ...(movie.titles?.value?.map((title) => title.text) ?? []),
+    ],
+  );
 }

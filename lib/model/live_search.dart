@@ -20,13 +20,16 @@ class LiveSearch extends ChangeNotifier {
 
   get loading => searchingOnline || _searchCaller.scheduled;
 
-  void updateSearch(String search) {
+  void updateSearch(String search) async {
     searchTerm = search;
     if (searchTerm.isEmpty) {
       return;
     }
-    searchResults = manager.localSearch(search);
     _searchCaller.call();
+    notifyListeners();
+    var localResults = await manager.localSearchAsync(search);
+    if (searchTerm != search) return;
+    searchResults = localResults;
     notifyListeners();
   }
 
@@ -45,10 +48,10 @@ class LiveSearch extends ChangeNotifier {
       List<MovieData> onlineResults = await manager.onlineSearch(searchTerm);
       searchingOnline = false;
       // if the search term has changed since we started searching, ignore the results
-      if (startedSearching != searchTerm) {
-        return;
-      }
-      List<MovieData> localResults = manager.localSearch(searchTerm);
+      if (startedSearching != searchTerm) return;
+      List<MovieData> localResults = await manager.localSearchAsync(searchTerm);
+      if (startedSearching != searchTerm) return;
+
       localResults.removeWhere((element) => onlineResults.contains(element));
       searchResults = onlineResults + localResults;
       notifyListeners();

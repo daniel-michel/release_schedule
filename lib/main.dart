@@ -7,7 +7,6 @@ import 'package:release_schedule/model/local_movie_storage.dart';
 import 'package:release_schedule/model/movie_manager.dart';
 import 'package:release_schedule/view/movie_item.dart';
 import 'package:release_schedule/view/movie_manager_list.dart';
-import 'package:release_schedule/view/swipe_transition.dart';
 
 void main() {
   runApp(const MyApp());
@@ -52,28 +51,40 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _HomePageState extends State<HomePage> {
   late LiveSearch liveSearch;
   late TextEditingController _searchController;
+  late PageController _pageController;
+  int currentPage = 1;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this, // the SingleTickerProviderStateMixin
-      duration: const Duration(milliseconds: 300),
-    );
     _searchController = TextEditingController();
+    _pageController = PageController(initialPage: 1);
     liveSearch = LiveSearch(widget.manager);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
     _searchController.dispose();
+    _pageController.dispose();
     super.dispose();
+  }
+
+  void _setSearchResultsVisibility(bool visible) {
+    int newPage = visible ? 0 : 1;
+    if (currentPage == newPage) {
+      return;
+    }
+    currentPage = newPage;
+    setState(() {
+      _pageController.animateToPage(
+        currentPage,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.ease,
+      );
+    });
   }
 
   @override
@@ -91,42 +102,36 @@ class _HomePageState extends State<HomePage>
                   border: InputBorder.none,
                 ),
                 onChanged: (value) {
-                  setState(() {
-                    if (value.isEmpty) {
-                      _controller.reverse();
-                    } else {
-                      _controller.forward();
-                    }
-                    liveSearch.updateSearch(value);
-                  });
+                  liveSearch.updateSearch(value);
+                  _setSearchResultsVisibility(value.isNotEmpty);
                 },
               ),
             ),
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                if (liveSearch.searchTerm.isEmpty) return Container();
-                return IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    liveSearch.updateSearch("");
-                    _controller.reverse();
-                  },
-                );
-              },
-            ),
+            liveSearch.searchTerm.isEmpty
+                ? Container()
+                : IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      liveSearch.updateSearch("");
+                      _setSearchResultsVisibility(false);
+                    },
+                  ),
           ],
         ),
         actions: [HamburgerMenu(widget.manager)],
       ),
-      body: SwipeTransition(
-        animation: _controller,
-        first: OverviewPage(manager: widget.manager),
-        second: SearchResultPage(
-          liveSearch: liveSearch,
-          manager: widget.manager,
-        ),
+      body: PageView(
+        controller: _pageController,
+        scrollDirection: Axis.vertical,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          SearchResultPage(
+            liveSearch: liveSearch,
+            manager: widget.manager,
+          ),
+          OverviewPage(manager: widget.manager),
+        ],
       ),
     );
   }

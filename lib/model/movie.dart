@@ -148,6 +148,10 @@ class MovieData extends ChangeNotifier {
     notifyListeners();
   }
 
+  MovieData copy() {
+    return MovieData()..updateWithNewIgnoringUserControlled(this);
+  }
+
   @override
   String toString() {
     return "$title (${_releaseDate.toString()}${_genres?.value?.isNotEmpty ?? false ? "; ${_genres?.value?.join(", ")}" : ""})";

@@ -39,6 +39,12 @@ class WikidataMovieData extends MovieData {
   }
 
   @override
+  WikidataMovieData copy() {
+    return WikidataMovieData(entityId)
+      ..updateWithNewIgnoringUserControlled(this);
+  }
+
+  @override
   bool same(MovieData other) {
     return other is WikidataMovieData && entityId == other.entityId;
   }
