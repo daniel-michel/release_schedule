@@ -230,7 +230,9 @@ class HeaderWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     bool titleNextToPoster = width > 500;
-    double posterWidth = min(titleNextToPoster ? width / 3 : width, 300);
+    double posterWidth = movie.poster != null
+        ? min(titleNextToPoster ? width / 3 : width, 300)
+        : 0;
     double posterRadius = titleNextToPoster ? 0 : posterWidth * 0.07;
     double headerTextWidth = titleNextToPoster ? width - posterWidth : width;
 
