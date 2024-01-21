@@ -35,11 +35,12 @@ class WikidataEntities {
   static const String film = "Q11424";
   static const String filmProject = "Q18011172";
   static const String featureFilm = "Q24869";
+  static const String filmReboot = "Q111241092";
   static const String animatedFilm = "Q202866";
   static const String animatedFeatureFilm = "Q29168811";
-  static const String threeDFilm = "Q229390";
-  static const String computerAnimatedFilm = "Q28968258";
   static const String animatedFilmReboot = "Q118189123";
+  static const String computerAnimatedFilm = "Q28968258";
+  static const String threeDFilm = "Q229390";
   static const String filmAdaption = "Q1257444";
   static const String tvSeries = "Q5398426";
 }
@@ -48,6 +49,7 @@ const filmTypeEntities = [
   WikidataEntities.film,
   WikidataEntities.filmProject,
   WikidataEntities.featureFilm,
+  WikidataEntities.filmReboot,
   WikidataEntities.animatedFilm,
   WikidataEntities.animatedFeatureFilm,
   WikidataEntities.threeDFilm,
@@ -181,7 +183,9 @@ class WikidataMovieApi implements MovieApi {
         }
       }
     }
-    if (fidelity == InformationFidelity.details) {
+    if (fidelity == InformationFidelity.details ||
+        fidelity == InformationFidelity.upcoming ||
+        fidelity == InformationFidelity.search) {
       // wikipedia intro text
       final List<WikidataMovieData> moviesToUpdate = wikidataMovies
           .where((movie) => shouldUpdateForMovie(
@@ -253,9 +257,10 @@ Future<void> _updateDescriptionUsingWikipediaIntroText(
   Iterable<String> allWikipediaTitles = movies
       .map<String?>((movie) => movie.wikipediaTitle?.value)
       .whereType<String>();
-  await _getWikipediaIntroTextForTitles(allWikipediaTitles.toList());
+  await _getWikipediaIntroTextAndPageImageForTitles(
+      allWikipediaTitles.toList());
   for (final movie in movies) {
-    movie.updateWikipediaTitleFromCache();
+    movie.updateWikipediaTitleAndImageFromCache();
   }
 }
 
@@ -373,23 +378,27 @@ String? getCachedLabelForEntity(String entityId) {
 
 ApiManager _wikipediaApi =
     ApiManager("https://en.wikipedia.org/w/api.php?format=json&origin=*");
-Map<String, Dated<String?>> _wikipediaIntroTextCache = {};
+typedef WikipediaIntroAndPageImage = ({String? text, String? image});
+Map<String, Dated<WikipediaIntroAndPageImage>>
+    _wikipediaIntroTextAndImageCache = {};
 
-Future<Map<String, Dated<String?>>> _getWikipediaIntroTextForTitles(
-    List<String> pageTitles) async {
+Future<Map<String, Dated<WikipediaIntroAndPageImage>>>
+    _getWikipediaIntroTextAndPageImageForTitles(List<String> pageTitles) async {
   const batchSize = 50;
-  Map<String, Dated<String?>> explainTexts = {};
+  Map<String, Dated<WikipediaIntroAndPageImage>> explainTexts = {};
   for (int i = pageTitles.length - 1; i >= 0; i--) {
-    if (_wikipediaIntroTextCache.containsKey(pageTitles[i])) {
-      explainTexts[pageTitles[i]] = _wikipediaIntroTextCache[pageTitles[i]]!;
+    if (_wikipediaIntroTextAndImageCache.containsKey(pageTitles[i])) {
+      explainTexts[pageTitles[i]] =
+          _wikipediaIntroTextAndImageCache[pageTitles[i]]!;
       pageTitles.removeAt(i);
     }
   }
+  const maxImageWidth = 300;
   for (int i = 0; i < (pageTitles.length / batchSize).ceil(); i++) {
     final start = i * batchSize;
     final end = min((i + 1) * batchSize, pageTitles.length);
     Response response = await _wikipediaApi.get(
-        "&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=${pageTitles.sublist(start, end).join("|")}");
+        "&action=query&prop=extracts|pageimages&exintro&explaintext&pithumbsize=$maxImageWidth&pilicense=free&redirects=1&titles=${pageTitles.sublist(start, end).join("|")}");
     Map<String, dynamic> result = jsonDecode(response.body);
     List<dynamic>? normalize = result["query"]["normalized"];
     Map<String, dynamic> batchPages = result["query"]["pages"];
@@ -400,15 +409,16 @@ Future<Map<String, Dated<String?>>> _getWikipediaIntroTextForTitles(
               .firstOrNull?["from"] ??
           pageTitle;
       String? introText = batchPages[pageId]["extract"];
-      if (introText != null) {
-        _wikipediaIntroTextCache[originalTitle] =
-            explainTexts[originalTitle] = Dated.now(introText);
-      }
+      String? imageUrl = batchPages[pageId]["thumbnail"]?["source"];
+      _wikipediaIntroTextAndImageCache[originalTitle] =
+          explainTexts[originalTitle] =
+              Dated.now((text: introText, image: imageUrl));
     }
   }
   return explainTexts;
 }
 
-Dated<String?>? getCachedWikipediaIntroTextForTitle(String title) {
-  return _wikipediaIntroTextCache[title];
+Dated<WikipediaIntroAndPageImage>?
+    getCachedWikipediaIntroTextAndPageImageForTitle(String title) {
+  return _wikipediaIntroTextAndImageCache[title];
 }

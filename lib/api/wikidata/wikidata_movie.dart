@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:release_schedule/api/json_helper.dart';
 import 'package:release_schedule/api/wikidata/wikidata_movie_api.dart';
 import 'package:release_schedule/model/dates.dart';
@@ -7,6 +8,7 @@ class WikidataMovieData extends MovieData {
   String entityId;
   Dated<List<String>?>? genreIds;
   Dated<String?>? wikipediaTitle;
+  Dated<String?>? posterUrl;
   Dated<String?>? imdbId;
   Dated<List<DateWithPrecisionAndPlace>?>? releaseDatesWithPlaceId;
 
@@ -23,6 +25,9 @@ class WikidataMovieData extends MovieData {
                 ids, (ids) => (ids as List<dynamic>).cast<String>())));
     wikipediaTitle = decodeOptionalJson(encodable["wikipediaTitle"],
         (datedTitle) => Dated.fromJsonEncodable(datedTitle, (title) => title));
+    posterUrl = decodeOptionalJson(encodable["posterUrl"],
+        (datedUrl) => Dated.fromJsonEncodable(datedUrl, (url) => url));
+    updatePoster();
     releaseDatesWithPlaceId = decodeOptionalJson(
       encodable["releaseDatesWithPlaceId"],
       (datedReleaseDates) =>
@@ -59,6 +64,7 @@ class WikidataMovieData extends MovieData {
         "entityId": entityId,
         "genreIds": genreIds?.toJsonEncodable((genres) => genres),
         "wikipediaTitle": wikipediaTitle?.toJsonEncodable((title) => title),
+        "posterUrl": posterUrl?.toJsonEncodable((url) => url),
         "releaseDatesWithPlaceId": releaseDatesWithPlaceId?.toJsonEncodable(
             (dates) => dates?.map((date) => date.toJsonEncodable()).toList()),
         "imdbId": imdbId?.toJsonEncodable((id) => id),
@@ -100,13 +106,20 @@ class WikidataMovieData extends MovieData {
     }
     if (newWikipediaTitle != null) {
       wikipediaTitle = Dated.now(newWikipediaTitle);
-      updateWikipediaTitleFromCache();
+      updateWikipediaTitleAndImageFromCache();
     }
 
     setDetails(
       titles: Dated.now(titles),
       labels: Dated.now(labels),
     );
+  }
+
+  updatePoster() {
+    final localPosterUrl = posterUrl?.value;
+    if (localPosterUrl != null) {
+      setDetails(poster: NetworkImage(localPosterUrl));
+    }
   }
 
   void updateGenresFromCache({bool outdated = false}) {
@@ -126,12 +139,16 @@ class WikidataMovieData extends MovieData {
     }
   }
 
-  void updateWikipediaTitleFromCache() {
+  void updateWikipediaTitleAndImageFromCache() {
     final localWikipediaTitle = wikipediaTitle?.value;
     if (localWikipediaTitle != null) {
-      Dated<String?>? description =
-          getCachedWikipediaIntroTextForTitle(localWikipediaTitle);
-      setDetails(description: description);
+      var wikipedia =
+          getCachedWikipediaIntroTextAndPageImageForTitle(localWikipediaTitle);
+      if (wikipedia != null) {
+        posterUrl = Dated(wikipedia.value.image, wikipedia.date);
+        updatePoster();
+        setDetails(description: Dated(wikipedia.value.text, wikipedia.date));
+      }
     }
   }
 
