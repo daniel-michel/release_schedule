@@ -61,6 +61,7 @@ class MoviePage extends StatelessWidget {
           ]),
           body: SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 HeaderWidget(movie),
                 Padding(
